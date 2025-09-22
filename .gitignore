@@ -1,0 +1,56 @@
+# Model files
+models/
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.bin
+
+# Output files
+output/
+input/
+temp/
+
+# Custom nodes (if testing locally)
+custom_nodes/
+!custom_nodes/.gitkeep
+
+# Workflows (user-specific)
+workflows/
+!workflows/default.json
+
+# Storage
+storage/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker
+.dockerignore
+
+# Logs
+*.log
+logs/
+
+# Environment variables
+.env
+.env.local

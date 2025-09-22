@@ -1,0 +1,70 @@
+{
+  "name": "ComfyUI with CUDA 12.1",
+  "imageName": "effekt/runpod-comfyui:latest",
+  "description": "ComfyUI with CUDA 12.1 support, pre-installed ComfyUI Manager, and optimized for RunPod deployment",
+
+  "dockerArgs": "",
+  "containerDiskSize": 40,
+  "volumeDiskSize": 50,
+
+  "ports": "8188/http",
+  "volumePath": "/workspace",
+
+  "env": [
+    {
+      "key": "DOWNLOAD_MODELS",
+      "value": "false",
+      "description": "Set to 'true' to download base SD 1.5 model on startup"
+    },
+    {
+      "key": "AUTO_UPDATE",
+      "value": "false",
+      "description": "Set to 'true' to auto-update ComfyUI on startup"
+    },
+    {
+      "key": "DISABLE_AUTO_LAUNCH",
+      "value": "true",
+      "description": "Set to 'false' to auto-launch browser (not recommended for RunPod)"
+    },
+    {
+      "key": "COMFYUI_PREVIEW_METHOD",
+      "value": "auto",
+      "description": "Preview method: auto, latent2rgb, or taesd"
+    },
+    {
+      "key": "COMFYUI_ARGS",
+      "value": "",
+      "description": "Additional ComfyUI arguments (e.g., --highvram, --normalvram, --lowvram)"
+    }
+  ],
+
+  "startScript": "/workspace/entrypoint.sh",
+
+  "supportedGPUs": [
+    "NVIDIA RTX 3060",
+    "NVIDIA RTX 3070",
+    "NVIDIA RTX 3080",
+    "NVIDIA RTX 3090",
+    "NVIDIA RTX 4070 Ti",
+    "NVIDIA RTX 4080",
+    "NVIDIA RTX 4090",
+    "NVIDIA RTX A4000",
+    "NVIDIA RTX A4500",
+    "NVIDIA RTX A5000",
+    "NVIDIA RTX A6000",
+    "NVIDIA A40",
+    "NVIDIA L40",
+    "NVIDIA A100 40GB",
+    "NVIDIA A100 80GB",
+    "NVIDIA H100"
+  ],
+
+  "minimumVRAM": 8,
+  "recommendedVRAM": 12,
+
+  "readme": "# ComfyUI on RunPod\n\nThis template provides ComfyUI with CUDA 12.1 support, optimized for RunPod deployment.\n\n## Features\n- ComfyUI with latest updates\n- CUDA 12.1 with PyTorch 2.2.0\n- Pre-installed ComfyUI Manager\n- Popular custom nodes pre-installed\n- Persistent storage support\n- Web UI accessible on port 8188\n\n## Quick Start\n1. Deploy this template on RunPod\n2. Wait for initialization (1-2 minutes)\n3. Access ComfyUI at your pod URL on port 8188\n4. Use ComfyUI Manager to install additional models and nodes\n\n## Storage\n- Models: /workspace/ComfyUI/models\n- Outputs: /workspace/ComfyUI/output\n- Inputs: /workspace/ComfyUI/input\n\n## Environment Variables\n- DOWNLOAD_MODELS: Download base models on startup\n- AUTO_UPDATE: Auto-update ComfyUI\n- COMFYUI_ARGS: Additional ComfyUI arguments\n\n## Support\nFor issues or questions, visit: https://github.com/effekt/runpod",
+
+  "version": "1.0.0",
+  "isPublic": false,
+  "computeType": "gpu"
+}

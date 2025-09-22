@@ -1,0 +1,227 @@
+# ComfyUI RunPod Template
+
+A production-ready Docker template for deploying ComfyUI on RunPod with CUDA support, persistent storage, and pre-installed extensions.
+
+## Features
+
+- 🚀 **CUDA 12.1** with PyTorch 2.2.0 for optimal GPU performance
+- 🎨 **ComfyUI** with latest updates and ComfyUI Manager pre-installed
+- 📦 **Popular custom nodes** pre-configured
+- 💾 **Persistent storage** support for models and outputs
+- 🌐 **Web UI** accessible on port 8188
+- 🔧 **Customizable** via environment variables
+- 🐳 **Docker Compose** support for local testing
+
+## Quick Start
+
+### Option 1: Deploy on RunPod
+
+1. Build and push the Docker image to Docker Hub:
+```bash
+# Build the image
+docker build -t effekt/runpod-comfyui:latest .
+
+# Push to Docker Hub
+docker push effekt/runpod-comfyui:latest
+```
+
+2. Create a RunPod template:
+   - Go to RunPod Dashboard > Templates
+   - Click "New Template"
+   - Upload or paste the contents of `runpod-template.json`
+   - Update the `imageName` field with your Docker Hub username
+
+3. Deploy a Pod:
+   - Go to Pods > Deploy
+   - Select your ComfyUI template
+   - Choose GPU type (minimum 8GB VRAM recommended)
+   - Set disk sizes (40GB container, 50GB volume recommended)
+   - Deploy!
+
+4. Access ComfyUI:
+   - Wait 1-2 minutes for initialization
+   - Click on "Connect" and select port 8188
+   - ComfyUI interface will open in a new tab
+
+### Option 2: Local Testing with Docker Compose
+
+1. Clone this repository:
+```bash
+git clone https://github.com/effekt/runpod.git
+cd runpod/comfyui
+```
+
+2. Create local directories for persistent storage:
+```bash
+mkdir -p models output input custom_nodes workflows storage
+```
+
+3. Start the container:
+```bash
+docker-compose up -d
+```
+
+4. Access ComfyUI at `http://localhost:8188`
+
+## Directory Structure
+
+```
+/workspace/
+├── ComfyUI/
+│   ├── models/           # AI models (checkpoints, VAE, LoRA, etc.)
+│   │   ├── checkpoints/  # Stable Diffusion models
+│   │   ├── vae/          # VAE models
+│   │   ├── loras/        # LoRA models
+│   │   └── ...
+│   ├── output/           # Generated images
+│   ├── input/            # Input images for processing
+│   ├── custom_nodes/     # ComfyUI extensions
+│   └── workflows/        # Saved ComfyUI workflows
+└── storage/              # Additional persistent storage
+```
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DOWNLOAD_MODELS` | `false` | Download base SD 1.5 model on startup |
+| `AUTO_UPDATE` | `false` | Auto-update ComfyUI on startup |
+| `DISABLE_AUTO_LAUNCH` | `true` | Disable browser auto-launch |
+| `COMFYUI_PREVIEW_METHOD` | `auto` | Preview method: auto, latent2rgb, or taesd |
+| `COMFYUI_ARGS` | `""` | Additional ComfyUI arguments |
+
+### Memory Optimization Arguments
+
+Add to `COMFYUI_ARGS` based on your GPU:
+
+- **High VRAM (24GB+)**: `--highvram`
+- **Normal VRAM (12-16GB)**: Default settings
+- **Low VRAM (8-12GB)**: `--normalvram`
+- **Very Low VRAM (4-8GB)**: `--lowvram`
+- **CPU Mode**: `--cpu` (automatically detected if no GPU)
+
+## Installing Models
+
+### Option 1: ComfyUI Manager (Recommended)
+1. Access ComfyUI web interface
+2. Click on "Manager" button
+3. Install models directly from the UI
+
+### Option 2: Manual Download
+1. SSH into your RunPod instance
+2. Download models to `/workspace/ComfyUI/models/checkpoints/`
+
+### Option 3: Pre-download
+Set `DOWNLOAD_MODELS=true` to download base models on startup
+
+## Popular Models
+
+### Checkpoints
+- **SD 1.5**: `v1-5-pruned-emaonly.safetensors`
+- **SDXL**: `sd_xl_base_1.0.safetensors`
+- **FLUX.1**: Available through ComfyUI Manager
+
+### VAE
+- **SD 1.5 VAE**: `vae-ft-mse-840000-ema-pruned.safetensors`
+
+### Upscalers
+- **ESRGAN 4x**: `ESRGAN_4x.pth`
+- **Real-ESRGAN**: Various models available
+
+## Custom Nodes
+
+Pre-installed popular nodes:
+- ComfyUI Manager
+- AnimateDiff Evolved
+- IPAdapter Plus
+- ControlNet Auxiliary
+- Ultimate SD Upscale
+- Efficiency Nodes
+- WD14 Tagger
+- And more...
+
+Install additional nodes via ComfyUI Manager or clone to `/workspace/ComfyUI/custom_nodes/`
+
+## Building Custom Images
+
+### Modify the Dockerfile
+
+```dockerfile
+# Add your customizations
+RUN pip install your-package
+
+# Add custom models
+RUN wget -O /workspace/ComfyUI/models/checkpoints/your-model.safetensors \
+    https://huggingface.co/your-model-url
+```
+
+### Build and Push
+
+```bash
+# Build with custom tag
+docker build -t effekt/runpod-comfyui-custom:latest .
+
+# Push to registry
+docker push effekt/runpod-comfyui-custom:latest
+```
+
+## GitHub Actions Workflow
+
+The included workflow automatically builds and pushes Docker images on push to main branch.
+
+Setup:
+1. Add Docker Hub credentials to GitHub Secrets:
+   - `DOCKERHUB_USERNAME`
+   - `DOCKERHUB_TOKEN`
+2. Update username in `.github/workflows/docker-build.yml`
+3. Push to main branch to trigger build
+
+## Troubleshooting
+
+### GPU not detected
+- Ensure NVIDIA drivers are installed
+- Check CUDA compatibility
+- Verify Docker GPU support: `docker run --gpus all nvidia/cuda:12.1.0-base nvidia-smi`
+
+### Out of Memory errors
+- Add `--lowvram` or `--cpu` to `COMFYUI_ARGS`
+- Reduce batch size in ComfyUI
+- Use smaller models
+
+### Slow startup
+- First run downloads dependencies (10-15 minutes)
+- Use persistent volumes to cache data
+- Pre-download models with `DOWNLOAD_MODELS=true`
+
+### Connection refused
+- Wait 1-2 minutes for initialization
+- Check logs: `docker logs comfyui`
+- Verify port 8188 is exposed
+
+## Performance Tips
+
+1. **Use persistent volumes** to avoid re-downloading models
+2. **Choose appropriate GPU** - RTX 3090/4090 or A5000+ recommended
+3. **Optimize VRAM usage** with appropriate flags
+4. **Cache models** on network storage for faster Pod switching
+5. **Pre-build custom images** with your commonly used models
+
+## Support
+
+- Issues: [GitHub Issues](https://github.com/effekt/runpod/issues)
+- ComfyUI: [Official Repository](https://github.com/comfyanonymous/ComfyUI)
+- RunPod: [Documentation](https://docs.runpod.io/)
+
+## License
+
+MIT License - See LICENSE file for details
+
+## Contributing
+
+Pull requests welcome! Please test locally with docker-compose before submitting.
+
+## Acknowledgments
+
+- [ComfyUI](https://github.com/comfyanonymous/ComfyUI) by comfyanonymous
+- [ComfyUI Manager](https://github.com/ltdrdata/ComfyUI-Manager) by ltdrdata
+- [RunPod](https://runpod.io/) for GPU cloud infrastructure

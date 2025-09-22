@@ -1,0 +1,56 @@
+# Git
+.git/
+.github/
+.gitignore
+
+# Documentation
+README.md
+LICENSE
+docs/
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# RunPod template
+runpod-template.json
+
+# Local development
+models/
+output/
+input/
+custom_nodes/
+workflows/
+storage/
+temp/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local

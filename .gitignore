@@ -45,7 +45,7 @@ Thumbs.db
 desktop.ini
 
 # Docker
-.dockerignore
+# .dockerignore files are needed in subdirectories
 
 # Logs
 *.log

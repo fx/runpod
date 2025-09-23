@@ -1,0 +1,84 @@
+name: flux
+version: 1.0.0
+base_image: effekt/runpod-comfyui:base
+description: FLUX model support with both Schnell and Dev variants
+extends: config-base.yaml  # Reference to base config
+
+# Additional flux-specific nodes (will be merged with base)
+nodes:
+  - url: https://github.com/comfyanonymous/ComfyUI_extra_models
+    description: FLUX model support
+  - url: https://github.com/city96/ComfyUI-GGUF
+    description: GGUF quantized model support
+  - url: https://github.com/kijai/ComfyUI-Florence2
+    description: Florence-2 vision model integration
+  - url: https://github.com/cubiq/ComfyUI_essentials
+    description: Essential nodes for FLUX
+  - url: https://github.com/mcmonkeyprojects/sd-dynamic-thresholding
+    description: Dynamic thresholding for better quality
+  - url: https://github.com/pythongosssss/ComfyUI-Custom-Scripts
+    description: Custom scripts and utilities
+  - url: https://github.com/ltdrdata/ComfyUI-Inspire-Pack
+    description: Inspire Pack for advanced features
+
+# Additional Python requirements (will be merged with base)
+requirements:
+  - transformers>=4.38.0
+  - sentencepiece>=0.1.99
+  - protobuf>=3.20.0
+  - bitsandbytes>=0.42.0
+
+# Workflows to include
+workflows:
+  - flux-txt2img.json
+  - flux-img2img.json
+  - flux-controlnet.json
+  - flux-upscale.json
+
+# Models to download
+models:
+  checkpoints:
+    - name: flux1-schnell
+      url: https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/flux1-schnell.safetensors
+      filename: flux1-schnell.safetensors
+    - name: flux1-schnell-fp8
+      url: https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-schnell-fp8-e4m3fn.safetensors
+      filename: flux1-schnell-fp8.safetensors
+    - name: flux1-dev
+      url: https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/flux1-dev.safetensors
+      filename: flux1-dev.safetensors
+    - name: flux1-dev-fp8
+      url: https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-dev-fp8.safetensors
+      filename: flux1-dev-fp8.safetensors
+  vae:
+    - name: flux_vae
+      url: https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/ae.safetensors
+      filename: flux_vae.safetensors
+  clip:
+    - name: t5xxl_fp8
+      url: https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn.safetensors
+      filename: t5xxl_fp8_e4m3fn.safetensors
+    - name: t5xxl_fp16
+      url: https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp16.safetensors
+      filename: t5xxl_fp16.safetensors
+    - name: clip_l
+      url: https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors
+      filename: clip_l.safetensors
+  loras:
+    - name: flux_realism_lora
+      url: https://huggingface.co/XLabs-AI/flux-RealismLora/resolve/main/lora.safetensors
+      filename: flux_realism_lora.safetensors
+  upscale_models:
+    - name: RealESRGAN_x4plus
+      url: https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth
+      filename: RealESRGAN_x4plus.pth
+    - name: RealESRGAN_x2plus
+      url: https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth
+      filename: RealESRGAN_x2plus.pth
+
+# Environment variables (override base)
+env_vars:
+  DOWNLOAD_MODELS: "false"
+  AUTO_UPDATE: "false"
+  VARIANT_NAME: "flux"
+  COMFYUI_ARGS: ""  # Default memory management (auto) works best for 24GB cards

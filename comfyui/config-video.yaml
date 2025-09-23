@@ -1,0 +1,120 @@
+name: video
+version: 1.0.0
+base_image: effekt/runpod-comfyui:base
+description: Complete video generation setup with WanVideo and AnimateDiff
+extends: config-base.yaml  # Inherit from base configuration
+
+# Additional video-specific nodes (will be merged with base)
+nodes:
+  - url: https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
+    description: Video helper suite for processing
+  - url: https://github.com/Fannovel16/ComfyUI-Frame-Interpolation
+    description: Frame interpolation for smoother videos
+  - url: https://github.com/kijai/ComfyUI-KJNodes
+    description: KJ nodes for video processing
+  - url: https://github.com/FizzleDorf/ComfyUI_FizzNodes
+    description: Fizz nodes for scheduling
+  - url: https://github.com/ArtVentureX/comfyui-animatediff
+    description: AnimateDiff integration
+  - url: https://github.com/Fannovel16/ComfyUI-MotionDiff
+    description: MotionDiff for motion transfer
+  - url: https://github.com/kijai/ComfyUI-SUPIR
+    description: SUPIR upscaling for animations
+  - url: https://github.com/ltdrdata/ComfyUI-Inspire-Pack
+    description: Inspire Pack utilities
+
+# Additional Python requirements (will be merged with base)
+requirements:
+  - imageio>=2.31.0
+  - imageio-ffmpeg>=0.4.9
+  - moviepy>=1.0.3
+  - ffmpeg-python>=0.2.0
+  - numpy>=1.24.0
+  - pillow>=10.0.0
+  - einops>=0.7.0
+  - omegaconf>=2.3.0
+  - tensorboard>=2.15.0
+  - scikit-image>=0.21.0
+
+# Workflows to include
+workflows:
+  - wan-video-txt2vid.json
+  - wan-video-img2vid.json
+  - wan-video-vid2vid.json
+  - wan-video-interpolation.json
+  - animate-txt2anim.json
+  - animate-img2anim.json
+  - animate-motion-transfer.json
+  - animate-character-consistency.json
+
+# Models to download
+models:
+  checkpoints:
+    - name: animatediff_v3_sd15
+      url: https://huggingface.co/guoyww/animatediff/resolve/main/v3_sd15_mm.ckpt
+      filename: animatediff_v3_sd15.ckpt
+    - name: realistic_vision_v5
+      url: civitai:130072
+      filename: realistic_vision_v5.safetensors
+    - name: animatediff_lightning_4step
+      url: https://huggingface.co/ByteDance/AnimateDiff-Lightning/resolve/main/animatediff_lightning_4step_diffusers.safetensors
+      filename: animatediff_lightning_4step.safetensors
+    - name: sd_turbo
+      url: https://huggingface.co/stabilityai/sd-turbo/resolve/main/sd_turbo.safetensors
+      filename: sd_turbo.safetensors
+  motion_models:
+    - name: mm_sd_v15
+      url: https://huggingface.co/guoyww/animatediff/resolve/main/mm_sd_v15.ckpt
+      filename: mm_sd_v15.ckpt
+    - name: mm_sd_v15_v2
+      url: https://huggingface.co/guoyww/animatediff/resolve/main/mm_sd_v15_v2.ckpt
+      filename: mm_sd_v15_v2.ckpt
+    - name: v3_sd15_mm
+      url: https://huggingface.co/guoyww/animatediff/resolve/main/v3_sd15_mm.ckpt
+      filename: v3_sd15_mm.ckpt
+    - name: mm_sdxl_v10_beta
+      url: https://huggingface.co/guoyww/animatediff/resolve/main/mm_sdxl_v10_beta.ckpt
+      filename: mm_sdxl_v10_beta.ckpt
+    - name: animatediff_lightning_4step_motion
+      url: https://huggingface.co/ByteDance/AnimateDiff-Lightning/resolve/main/animatediff_lightning_4step_motion.ckpt
+      filename: animatediff_lightning_4step_motion.ckpt
+    - name: temporaldiff_v1
+      url: https://huggingface.co/CiaraRowles/TemporalDiff/resolve/main/temporaldiff-v1-animatediff.ckpt
+      filename: temporaldiff_v1.ckpt
+  vae:
+    - name: vae-ft-mse
+      url: https://huggingface.co/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.safetensors
+      filename: vae-ft-mse-840000-ema-pruned.safetensors
+    - name: sdxl_vae
+      url: https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/resolve/main/sdxl_vae.safetensors
+      filename: sdxl_vae.safetensors
+  controlnet:
+    - name: control_v11f1e_sd15_tile
+      url: https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11f1e_sd15_tile.pth
+      filename: control_v11f1e_sd15_tile.pth
+    - name: control_v11p_sd15_openpose
+      url: https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11p_sd15_openpose.pth
+      filename: control_v11p_sd15_openpose.pth
+    - name: control_v11f1p_sd15_depth
+      url: https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11f1p_sd15_depth.pth
+      filename: control_v11f1p_sd15_depth.pth
+  loras:
+    - name: v2_lora_pan_left
+      url: https://huggingface.co/guoyww/animatediff/resolve/main/v2_lora_PanLeft.ckpt
+      filename: v2_lora_pan_left.ckpt
+    - name: v2_lora_pan_right
+      url: https://huggingface.co/guoyww/animatediff/resolve/main/v2_lora_PanRight.ckpt
+      filename: v2_lora_pan_right.ckpt
+    - name: v2_lora_zoom_in
+      url: https://huggingface.co/guoyww/animatediff/resolve/main/v2_lora_ZoomIn.ckpt
+      filename: v2_lora_zoom_in.ckpt
+    - name: v2_lora_zoom_out
+      url: https://huggingface.co/guoyww/animatediff/resolve/main/v2_lora_ZoomOut.ckpt
+      filename: v2_lora_zoom_out.ckpt
+
+# Environment variables (override base)
+env_vars:
+  DOWNLOAD_MODELS: "false"
+  AUTO_UPDATE: "false"
+  VARIANT_NAME: "video"
+  COMFYUI_ARGS: ""  # Default memory management (auto) works best for 24GB cards

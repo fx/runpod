@@ -1,0 +1,21 @@
+# Requirements for ComfyUI Variant Builder
+
+# Core dependencies
+PyYAML>=6.0.1
+requests>=2.31.0
+tqdm>=4.66.0
+hiyapyco>=0.7.0  # For YAML config inheritance
+
+# Optional dependencies for enhanced functionality
+# Uncomment if you want to use these features
+
+# For parallel downloads
+# aiohttp>=3.9.0
+# aiofiles>=23.2.0
+
+# For progress bars and better CLI output
+# rich>=13.7.0
+# click>=8.1.7
+
+# For validation
+# jsonschema>=4.20.0

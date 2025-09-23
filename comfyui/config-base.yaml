@@ -1,0 +1,65 @@
+name: base
+version: 1.0.0
+description: Base ComfyUI configuration with essential nodes
+
+# Custom nodes to install (essential defaults)
+nodes:
+  - url: https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved
+    description: AnimateDiff for animation
+  - url: https://github.com/cubiq/ComfyUI_IPAdapter_plus
+    description: IPAdapter for image prompting
+  - url: https://github.com/Fannovel16/comfyui_controlnet_aux
+    description: ControlNet auxiliary processors
+  - url: https://github.com/BlenderNeko/ComfyUI_ADV_CLIP_emb
+    description: Advanced CLIP text encoding
+  - url: https://github.com/jags111/efficiency-nodes-comfyui
+    description: Efficiency nodes for optimization
+  - url: https://github.com/pythongosssss/ComfyUI-WD14-Tagger
+    description: WD14 image tagger
+  - url: https://github.com/rgthree/rgthree-comfy
+    description: RGThree's utility nodes
+  - url: https://github.com/ssitu/ComfyUI_UltimateSDUpscale
+    description: Ultimate SD upscale
+  - url: https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes
+    description: Comfyroll custom nodes
+  - url: https://github.com/crystian/ComfyUI-Crystools
+    description: Crystools utilities
+
+# Python requirements
+requirements:
+  - torch>=2.2.0
+  - torchvision>=0.17.0
+  - xformers
+  - opencv-python-headless
+  - transformers>=4.36.0
+  - accelerate>=0.25.0
+
+# Models to download (minimal base set)
+models:
+  checkpoints:
+    - name: v1-5-pruned-emaonly
+      source: huggingface
+      repo: runwayml/stable-diffusion-v1-5
+      file: v1-5-pruned-emaonly.safetensors
+
+  vae:
+    - name: vae-ft-mse
+      source: huggingface
+      repo: stabilityai/sd-vae-ft-mse-original
+      file: vae-ft-mse-840000-ema-pruned.safetensors
+
+  upscale_models:
+    - name: ESRGAN_4x
+      source: url
+      url: https://huggingface.co/uwg/upscaler/resolve/main/ESRGAN/ESRGAN_4x.pth
+
+# Workflow files to include
+workflows:
+  - name: default
+    description: Empty default workflow
+    file: workflows/default.json
+
+# Environment variables
+env_vars:
+  COMFYUI_PREVIEW_METHOD: auto
+  DISABLE_AUTO_LAUNCH: "true"

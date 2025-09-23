@@ -33,7 +33,6 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: effekt/runpod-comfyui
 
 jobs:
   build-matrix:
@@ -82,7 +81,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ secrets.DOCKERHUB_USERNAME }}/runpod-comfyui
           flavor: |
             latest=false
             suffix=-${{ matrix.variant }},onlatest=false
@@ -117,5 +116,5 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: ${{ env.IMAGE_NAME }}
+          repository: ${{ secrets.DOCKERHUB_USERNAME }}/runpod-comfyui
           readme-filepath: ./comfyui/README.md

@@ -1,4 +1,4 @@
-name: Build ComfyUI Docker Image
+name: Build ComfyUI Docker Images
 
 on:
   push:
@@ -15,21 +15,50 @@ on:
       - master
   workflow_dispatch:
     inputs:
+      variant:
+        description: 'Variant to build (base, sdxl-pony, flux, video, or all)'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - base
+          - sdxl-pony
+          - flux
+          - video
+          - all
       tag_name:
-        description: 'Docker image tag'
+        description: 'Docker image tag (optional)'
         required: false
-        default: 'latest'
+        default: ''
 
 env:
   REGISTRY: docker.io
   IMAGE_NAME: effekt/runpod-comfyui
 
 jobs:
+  build-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set build matrix
+        id: set-matrix
+        run: |
+          if [ "${{ github.event.inputs.variant }}" = "all" ] || [ -z "${{ github.event.inputs.variant }}" ]; then
+            echo "matrix={\"variant\":[\"base\",\"sdxl-pony\",\"flux\",\"video\"]}" >> $GITHUB_OUTPUT
+          else
+            echo "matrix={\"variant\":[\"${{ github.event.inputs.variant }}\"]}" >> $GITHUB_OUTPUT
+          fi
+
   build:
+    needs: build-matrix
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    strategy:
+      matrix: ${{fromJson(needs.build-matrix.outputs.matrix)}}
+      fail-fast: false
 
     steps:
       - name: Checkout repository
@@ -54,13 +83,17 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            latest=false
+            suffix=-${{ matrix.variant }},onlatest=false
           tags: |
             type=ref,event=branch
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=${{ github.event.inputs.tag_name }},enable=${{ github.event_name == 'workflow_dispatch' }}
+            type=raw,value=${{ matrix.variant }},enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ matrix.variant == 'base' && github.ref == 'refs/heads/main' }}
+            type=raw,value=${{ github.event.inputs.tag_name }}-${{ matrix.variant }},enable=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name != '' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -70,9 +103,12 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.variant }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.variant }}
           build-args: |
+            VARIANT=${{ matrix.variant }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
             BUILDKIT_INLINE_CACHE=1
 
       - name: Update Docker Hub Description

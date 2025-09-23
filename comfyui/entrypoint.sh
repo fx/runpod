@@ -9,6 +9,51 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}Starting ComfyUI initialization...${NC}"
 
+# Function to install Python packages efficiently
+install_python_packages() {
+    echo -e "${YELLOW}Installing Python dependencies...${NC}"
+
+    # Use cache directory if available
+    CACHE_DIR="/workspace/venv-cache"
+    if [ -d "$CACHE_DIR" ]; then
+        export PIP_CACHE_DIR="$CACHE_DIR/pip"
+        mkdir -p "$PIP_CACHE_DIR"
+    fi
+
+    # Check if PyTorch is already installed
+    if python -c "import torch" 2>/dev/null; then
+        echo -e "${GREEN}PyTorch is already installed${NC}"
+    else
+        echo -e "${YELLOW}Installing PyTorch with CUDA support...${NC}"
+        pip install --no-cache-dir torch==2.2.0 torchvision==0.17.0 torchaudio==2.2.0 --index-url https://download.pytorch.org/whl/cu121
+    fi
+
+    # Install ComfyUI requirements if not already installed
+    if [ ! -f "/workspace/.comfyui_requirements_installed" ]; then
+        echo -e "${YELLOW}Installing ComfyUI requirements...${NC}"
+        cd /workspace/ComfyUI
+        pip install --no-cache-dir -r requirements.txt
+
+        # Install additional packages
+        echo -e "${YELLOW}Installing additional packages...${NC}"
+        pip install --no-cache-dir \
+            xformers \
+            opencv-python-headless \
+            imageio \
+            imageio-ffmpeg \
+            transformers \
+            safetensors \
+            accelerate \
+            Pillow \
+            scipy
+
+        touch /workspace/.comfyui_requirements_installed
+        echo -e "${GREEN}Python dependencies installed successfully${NC}"
+    else
+        echo -e "${GREEN}Python dependencies already installed${NC}"
+    fi
+}
+
 # Function to load configuration from file or URL
 load_config() {
     local config_source="$1"
@@ -97,6 +142,14 @@ print(f\"export CONFIG_NAME={config.get('name', 'custom')}\")
     return 1
 }
 
+# Check if this is the first run
+FIRST_RUN=false
+if [ -f "/workspace/.first_run" ]; then
+    FIRST_RUN=true
+    rm /workspace/.first_run
+    echo -e "${YELLOW}First run detected - will install all dependencies${NC}"
+fi
+
 # Load configuration from various sources
 # Priority: 1. COMFYUI_CONFIG_URL, 2. COMFYUI_CONFIG_FILE, 3. CONFIG_NAME, 4. Pre-baked config, 5. Base config
 if [ ! -z "$COMFYUI_CONFIG_URL" ]; then
@@ -111,6 +164,11 @@ elif [ -f "/workspace/config.yaml" ]; then
 else
     # Default to base config
     load_config "base"
+fi
+
+# Install Python packages on first run or if requested
+if [ "$FIRST_RUN" = true ] || [ "$FORCE_REINSTALL" = "true" ]; then
+    install_python_packages
 fi
 
 # Check if running on RunPod
@@ -130,6 +188,7 @@ if [ ! -z "$RUNPOD_POD_ID" ]; then
             mkdir -p /runpod-volume/ComfyUI/output
             mkdir -p /runpod-volume/ComfyUI/input
             mkdir -p /runpod-volume/ComfyUI/custom_nodes
+            mkdir -p /runpod-volume/venv-cache
 
             # Create symlinks only if they don't exist
             if [ ! -L "/workspace/ComfyUI/models" ] || [ ! -e "/workspace/ComfyUI/models" ]; then
@@ -146,66 +205,89 @@ if [ ! -z "$RUNPOD_POD_ID" ]; then
                 rm -rf /workspace/ComfyUI/input
                 ln -sf /runpod-volume/ComfyUI/input /workspace/ComfyUI/input
             fi
+
+            # Link venv cache for faster subsequent startups
+            if [ ! -L "/workspace/venv-cache" ] || [ ! -e "/workspace/venv-cache" ]; then
+                rm -rf /workspace/venv-cache
+                ln -sf /runpod-volume/venv-cache /workspace/venv-cache
+            fi
         fi
     fi
+else
+    echo -e "${YELLOW}Not running on RunPod - using local storage${NC}"
 fi
 
-# Use builder.py to handle all config-based setup (nodes, models, etc.)
-if [ ! -z "$COMFYUI_CONFIG_FILE" ] && [ -f "$COMFYUI_CONFIG_FILE" ]; then
+# Apply configuration using builder tool
+if [ ! -z "$COMFYUI_CONFIG_FILE" ]; then
     echo -e "${YELLOW}Applying configuration...${NC}"
 
     # Install nodes from config
-    python3 /workspace/builder.py install-nodes --config "$COMFYUI_CONFIG_FILE" || {
-        echo -e "${RED}Failed to install nodes${NC}"
-    }
+    if [ "$INSTALL_NODES" != "false" ]; then
+        python /workspace/builder.py install-nodes --config "$COMFYUI_CONFIG_FILE" || {
+            echo -e "${RED}Warning: Some nodes failed to install${NC}"
+        }
+    fi
 
-    # Download models if specified
+    # Download models if requested
     if [ "$DOWNLOAD_MODELS" = "true" ]; then
-        python3 /workspace/builder.py download --config "$COMFYUI_CONFIG_FILE" || {
-            echo -e "${RED}Failed to download models${NC}"
+        python /workspace/builder.py download --config "$COMFYUI_CONFIG_FILE" || {
+            echo -e "${RED}Warning: Some models failed to download${NC}"
         }
     fi
 fi
 
-# Update ComfyUI if specified
+# Auto-update ComfyUI if requested
 if [ "$AUTO_UPDATE" = "true" ]; then
     echo -e "${YELLOW}Updating ComfyUI...${NC}"
     cd /workspace/ComfyUI
     git pull || echo -e "${RED}Failed to update ComfyUI${NC}"
-    pip install -r requirements.txt --upgrade --quiet || echo -e "${RED}Failed to update requirements${NC}"
+
+    # Update requirements if changed
+    pip install -r requirements.txt --upgrade
 fi
+
+# Detect GPU and set appropriate flags
+COMFYUI_GPU_FLAGS=""
+if nvidia-smi &> /dev/null; then
+    echo -e "${GREEN}GPU detected${NC}"
+    nvidia-smi --query-gpu=name,memory.total --format=csv
+
+    # Get GPU memory in MB
+    GPU_MEM=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits | head -1)
+
+    # Auto-configure based on GPU memory unless overridden
+    if [ -z "$COMFYUI_ARGS" ]; then
+        if [ "$GPU_MEM" -ge 40000 ]; then
+            echo -e "${GREEN}High VRAM GPU detected (${GPU_MEM}MB) - using highvram mode${NC}"
+            COMFYUI_GPU_FLAGS="--highvram"
+        elif [ "$GPU_MEM" -ge 20000 ]; then
+            echo -e "${GREEN}Normal VRAM GPU detected (${GPU_MEM}MB) - using default mode${NC}"
+            COMFYUI_GPU_FLAGS=""
+        elif [ "$GPU_MEM" -ge 8000 ]; then
+            echo -e "${YELLOW}Low VRAM GPU detected (${GPU_MEM}MB) - using normalvram mode${NC}"
+            COMFYUI_GPU_FLAGS="--normalvram"
+        else
+            echo -e "${YELLOW}Very low VRAM GPU detected (${GPU_MEM}MB) - using lowvram mode${NC}"
+            COMFYUI_GPU_FLAGS="--lowvram"
+        fi
+    fi
+else
+    echo -e "${YELLOW}No GPU detected, running in CPU mode${NC}"
+    COMFYUI_GPU_FLAGS="--cpu"
+fi
+
+# Set preview method
+PREVIEW_FLAGS=""
+if [ ! -z "$COMFYUI_PREVIEW_METHOD" ]; then
+    PREVIEW_FLAGS="--preview-method $COMFYUI_PREVIEW_METHOD"
+fi
+
+# Combine all arguments
+FINAL_ARGS="$COMFYUI_GPU_FLAGS $PREVIEW_FLAGS $COMFYUI_ARGS $COMFYUI_CONFIG_ARGS"
 
 # Change to ComfyUI directory
 cd /workspace/ComfyUI
 
-# Set up command line arguments
-ARGS="--listen 0.0.0.0 --port 8188"
-
-# Add preview method if specified
-if [ ! -z "$COMFYUI_PREVIEW_METHOD" ]; then
-    ARGS="$ARGS --preview-method $COMFYUI_PREVIEW_METHOD"
-fi
-
-# Enable auto-launch in browser if not disabled
-if [ "$DISABLE_AUTO_LAUNCH" != "true" ]; then
-    ARGS="$ARGS"
-else
-    ARGS="$ARGS --disable-auto-launch"
-fi
-
-# Add CPU mode if no GPU is available
-if ! command -v nvidia-smi &> /dev/null || ! nvidia-smi &> /dev/null; then
-    echo -e "${YELLOW}No GPU detected, running in CPU mode${NC}"
-    ARGS="$ARGS --cpu"
-fi
-
-# Add custom args from environment variable
-if [ ! -z "$COMFYUI_ARGS" ]; then
-    ARGS="$ARGS $COMFYUI_ARGS"
-fi
-
-echo -e "${GREEN}Starting ComfyUI with args: $ARGS${NC}"
-echo -e "${GREEN}ComfyUI will be available at http://0.0.0.0:8188${NC}"
-
 # Start ComfyUI
-exec python main.py $ARGS
+echo -e "${GREEN}Starting ComfyUI with args: $FINAL_ARGS${NC}"
+exec python main.py --listen 0.0.0.0 --port 8188 --disable-auto-launch $FINAL_ARGS

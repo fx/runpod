@@ -25,14 +25,17 @@ nodes:
   - url: https://github.com/crystian/ComfyUI-Crystools
     description: Crystools utilities
 
-# Python requirements
+# Python requirements (installed at runtime to save image space)
+# PyTorch with CUDA is installed separately in entrypoint.sh
 requirements:
-  - torch>=2.2.0
-  - torchvision>=0.17.0
   - xformers
   - opencv-python-headless
   - transformers>=4.36.0
   - accelerate>=0.25.0
+  - imageio
+  - imageio-ffmpeg
+  - safetensors
+  - scipy
 
 # Models to download (minimal base set)
 models:

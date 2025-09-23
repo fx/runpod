@@ -1,70 +1,43 @@
 {
-  "name": "ComfyUI with CUDA 12.1",
-  "imageName": "effekt/runpod-comfyui:latest",
-  "description": "ComfyUI with CUDA 12.1 support, pre-installed ComfyUI Manager, and optimized for RunPod deployment",
-
-  "dockerArgs": "",
-  "containerDiskSize": 40,
-  "volumeDiskSize": 50,
-
+  "name": "ComfyUI with Configuration System",
+  "imageName": "effekt/runpod-comfyui:base",
+  "description": "ComfyUI with flexible configuration system. Supports base, flux, sdxl-pony, and video variants.",
+  "volumeInGb": 20,
+  "containerDiskInGb": 10,
+  "minVcpuCount": 2,
+  "minMemoryInGb": 8,
+  "gpuTypeId": "NVIDIA RTX A4000",
   "ports": "8188/http",
-  "volumePath": "/workspace",
-
+  "startJupyter": false,
+  "startSsh": true,
   "env": [
+    {
+      "key": "CONFIG_NAME",
+      "value": "base",
+      "description": "Configuration variant to load (base, flux, sdxl-pony, video)"
+    },
     {
       "key": "DOWNLOAD_MODELS",
       "value": "false",
-      "description": "Set to 'true' to download base SD 1.5 model on startup"
+      "description": "Download models on startup"
     },
     {
       "key": "AUTO_UPDATE",
       "value": "false",
-      "description": "Set to 'true' to auto-update ComfyUI on startup"
-    },
-    {
-      "key": "DISABLE_AUTO_LAUNCH",
-      "value": "true",
-      "description": "Set to 'false' to auto-launch browser (not recommended for RunPod)"
-    },
-    {
-      "key": "COMFYUI_PREVIEW_METHOD",
-      "value": "auto",
-      "description": "Preview method: auto, latent2rgb, or taesd"
+      "description": "Auto-update ComfyUI on startup"
     },
     {
       "key": "COMFYUI_ARGS",
       "value": "",
-      "description": "Additional ComfyUI arguments (e.g., --highvram, --normalvram, --lowvram)"
+      "description": "Additional ComfyUI arguments (--highvram, --lowvram, etc)"
+    },
+    {
+      "key": "HF_TOKEN",
+      "value": "",
+      "description": "HuggingFace token for gated models"
     }
   ],
-
-  "startScript": "/workspace/entrypoint.sh",
-
-  "supportedGPUs": [
-    "NVIDIA RTX 3060",
-    "NVIDIA RTX 3070",
-    "NVIDIA RTX 3080",
-    "NVIDIA RTX 3090",
-    "NVIDIA RTX 4070 Ti",
-    "NVIDIA RTX 4080",
-    "NVIDIA RTX 4090",
-    "NVIDIA RTX A4000",
-    "NVIDIA RTX A4500",
-    "NVIDIA RTX A5000",
-    "NVIDIA RTX A6000",
-    "NVIDIA A40",
-    "NVIDIA L40",
-    "NVIDIA A100 40GB",
-    "NVIDIA A100 80GB",
-    "NVIDIA H100"
-  ],
-
-  "minimumVRAM": 8,
-  "recommendedVRAM": 12,
-
-  "readme": "# ComfyUI on RunPod\n\nThis template provides ComfyUI with CUDA 12.1 support, optimized for RunPod deployment.\n\n## Features\n- ComfyUI with latest updates\n- CUDA 12.1 with PyTorch 2.2.0\n- Pre-installed ComfyUI Manager\n- Popular custom nodes pre-installed\n- Persistent storage support\n- Web UI accessible on port 8188\n\n## Quick Start\n1. Deploy this template on RunPod\n2. Wait for initialization (1-2 minutes)\n3. Access ComfyUI at your pod URL on port 8188\n4. Use ComfyUI Manager to install additional models and nodes\n\n## Storage\n- Models: /workspace/ComfyUI/models\n- Outputs: /workspace/ComfyUI/output\n- Inputs: /workspace/ComfyUI/input\n\n## Environment Variables\n- DOWNLOAD_MODELS: Download base models on startup\n- AUTO_UPDATE: Auto-update ComfyUI\n- COMFYUI_ARGS: Additional ComfyUI arguments\n\n## Support\nFor issues or questions, visit: https://github.com/effekt/runpod",
-
-  "version": "1.0.0",
-  "isPublic": false,
-  "computeType": "gpu"
+  "dockerArgs": "",
+  "volumeMountPath": "/runpod-volume",
+  "readme": "## ComfyUI on RunPod\n\nThis template provides ComfyUI with a flexible configuration system.\n\n### Available Variants\n- **base**: Minimal installation with SD 1.5\n- **flux**: FLUX models for high-quality generation\n- **sdxl-pony**: SDXL and Pony models\n- **video**: Video generation models\n\n### First Run\nOn first run, the container will:\n1. Install PyTorch and dependencies (~5 minutes)\n2. Download selected models if DOWNLOAD_MODELS=true\n3. Install custom nodes from configuration\n\n### Access\nComfyUI will be available at:\n- HTTP: `https://{pod-id}-8188.proxy.runpod.net`\n- Direct: Port 8188\n\n### GPU Memory Settings\n- 48GB+ (A6000, A100): Set COMFYUI_ARGS=--highvram\n- 24GB (RTX 4090, A5000): Leave empty (auto)\n- 8-16GB: Set COMFYUI_ARGS=--lowvram\n- <8GB: Set COMFYUI_ARGS=--cpu\n\n### Persistent Storage\nModels and outputs are stored in /runpod-volume and persist across restarts."
 }

@@ -1,0 +1,42 @@
+{
+  "name": "ComfyUI Sdxl-pony Edition",
+  "imageName": "effekt/runpod-comfyui:sdxl-pony",
+  "description": "ComfyUI pre-configured for sdxl-pony models with optimized settings.",
+  "volumeInGb": 50,
+  "containerDiskInGb": 20,
+  "minVcpuCount": 4,
+  "minMemoryInGb": 16,
+  "gpuTypeId": "NVIDIA RTX A5000",
+  "ports": "8188/http",
+  "startJupyter": false,
+  "startSsh": true,
+  "env": [
+    {
+      "key": "CONFIG_NAME",
+      "value": "sdxl-pony",
+      "description": "Pre-configured for sdxl-pony models"
+    },
+    {
+      "key": "DOWNLOAD_MODELS",
+      "value": "true",
+      "description": "Downloads sdxl-pony models on first run"
+    },
+    {
+      "key": "AUTO_UPDATE",
+      "value": "false",
+      "description": "Auto-update ComfyUI on startup"
+    },
+    {
+      "key": "COMFYUI_ARGS",
+      "value": "",
+      "description": "Additional ComfyUI arguments"
+    },
+    {
+      "key": "HF_TOKEN",
+      "value": "",
+      "description": "Required for FLUX models - get from huggingface.co/settings/tokens"
+    }
+  ],
+  "dockerArgs": "",
+  "volumeMountPath": "/runpod-volume"
+}

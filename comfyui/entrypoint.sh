@@ -9,22 +9,109 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}Starting ComfyUI initialization...${NC}"
 
-# Function to download a file if it doesn't exist
-download_if_not_exists() {
-    local url=$1
-    local dest=$2
-    local filename=$(basename "$dest")
+# Function to load configuration from file or URL
+load_config() {
+    local config_source="$1"
 
-    if [ ! -f "$dest" ]; then
-        echo -e "${YELLOW}Downloading $filename...${NC}"
-        wget -q --show-progress -O "$dest" "$url" || {
-            echo -e "${RED}Failed to download $filename${NC}"
-            rm -f "$dest"
-        }
-    else
-        echo -e "${GREEN}$filename already exists, skipping download${NC}"
+    if [ -z "$config_source" ]; then
+        return 1
     fi
+
+    echo -e "${YELLOW}Loading configuration from: $config_source${NC}"
+
+    # Check if it's a URL
+    if [[ "$config_source" == http* ]]; then
+        # Download config from URL
+        wget -q -O /tmp/config.yaml "$config_source" || {
+            echo -e "${RED}Failed to download config from $config_source${NC}"
+            return 1
+        }
+        config_file="/tmp/config.yaml"
+    elif [ -f "$config_source" ]; then
+        # Use local file
+        config_file="$config_source"
+    elif [ -f "/workspace/configs/config-${config_source}.yaml" ]; then
+        # Try config-name.yaml format
+        config_file="/workspace/configs/config-${config_source}.yaml"
+    elif [ -f "/workspace/${config_source}" ]; then
+        # Try in workspace
+        config_file="/workspace/${config_source}"
+    else
+        echo -e "${RED}Config file not found: $config_source${NC}"
+        return 1
+    fi
+
+    # Export the config file path for later use
+    export COMFYUI_CONFIG_FILE="$config_file"
+
+    # Parse YAML and export environment variables
+    python3 -c "
+import sys
+import os
+from pathlib import Path
+
+# Add lib directory to path for config_loader
+sys.path.insert(0, '/workspace/lib')
+
+try:
+    # Try to use config_loader_hiyapyco for inheritance support
+    try:
+        from config_loader_hiyapyco import ConfigLoader
+    except ImportError:
+        # Fallback to simple loader if HiYaPyCo is not available
+        from config_loader_simple import ConfigLoader
+
+    config_path = Path(sys.argv[1])
+
+    # If it's a config in the configs directory, use the loader
+    if 'config-' in config_path.name and config_path.suffix == '.yaml':
+        loader = ConfigLoader(config_path.parent)
+        config_name = config_path.stem.replace('config-', '')
+        config = loader.load_config(config_name)
+    else:
+        # Fallback to regular YAML loading
+        import yaml
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+except (ImportError, ModuleNotFoundError) as e:
+    # Fallback if no config_loader is available
+    import yaml
+    with open(sys.argv[1], 'r') as f:
+        config = yaml.safe_load(f)
+
+# Export environment variables from config
+env_vars = config.get('env_vars', {})
+for key, value in env_vars.items():
+    print(f'export {key}=\"{value}\"')
+
+# Store config name
+print(f\"export CONFIG_NAME={config.get('name', 'custom')}\")
+" "$config_file" > /tmp/config_env.sh
+
+    if [ -f "/tmp/config_env.sh" ]; then
+        source /tmp/config_env.sh
+        echo -e "${GREEN}Configuration loaded successfully${NC}"
+        return 0
+    fi
+
+    return 1
 }
+
+# Load configuration from various sources
+# Priority: 1. COMFYUI_CONFIG_URL, 2. COMFYUI_CONFIG_FILE, 3. CONFIG_NAME, 4. Pre-baked config, 5. Base config
+if [ ! -z "$COMFYUI_CONFIG_URL" ]; then
+    load_config "$COMFYUI_CONFIG_URL"
+elif [ ! -z "$COMFYUI_CONFIG_FILE" ]; then
+    load_config "$COMFYUI_CONFIG_FILE"
+elif [ ! -z "$CONFIG_NAME" ]; then
+    load_config "$CONFIG_NAME"
+elif [ -f "/workspace/config.yaml" ]; then
+    # Pre-baked config
+    load_config "/workspace/config.yaml"
+else
+    # Default to base config
+    load_config "base"
+fi
 
 # Check if running on RunPod
 if [ ! -z "$RUNPOD_POD_ID" ]; then
@@ -63,61 +150,21 @@ if [ ! -z "$RUNPOD_POD_ID" ]; then
     fi
 fi
 
-# Install popular custom nodes if they don't exist
-echo -e "${YELLOW}Checking custom nodes...${NC}"
-cd /workspace/ComfyUI/custom_nodes
+# Use builder.py to handle all config-based setup (nodes, models, etc.)
+if [ ! -z "$COMFYUI_CONFIG_FILE" ] && [ -f "$COMFYUI_CONFIG_FILE" ]; then
+    echo -e "${YELLOW}Applying configuration...${NC}"
 
-# List of popular custom nodes to install
-declare -a custom_nodes=(
-    "https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved"
-    "https://github.com/cubiq/ComfyUI_IPAdapter_plus"
-    "https://github.com/Fannovel16/comfyui_controlnet_aux"
-    "https://github.com/BlenderNeko/ComfyUI_ADV_CLIP_emb"
-    "https://github.com/jags111/efficiency-nodes-comfyui"
-    "https://github.com/pythongosssss/ComfyUI-WD14-Tagger"
-    "https://github.com/rgthree/rgthree-comfy"
-    "https://github.com/ssitu/ComfyUI_UltimateSDUpscale"
-    "https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes"
-    "https://github.com/crystian/ComfyUI-Crystools"
-)
+    # Install nodes from config
+    python3 /workspace/builder.py install-nodes --config "$COMFYUI_CONFIG_FILE" || {
+        echo -e "${RED}Failed to install nodes${NC}"
+    }
 
-for repo_url in "${custom_nodes[@]}"; do
-    repo_name=$(basename "$repo_url" .git)
-    if [ ! -d "$repo_name" ]; then
-        echo -e "${YELLOW}Installing custom node: $repo_name${NC}"
-        git clone "$repo_url" || echo -e "${RED}Failed to clone $repo_name${NC}"
-
-        # Install requirements if they exist
-        if [ -f "$repo_name/requirements.txt" ]; then
-            pip install -r "$repo_name/requirements.txt" --quiet || echo -e "${RED}Failed to install requirements for $repo_name${NC}"
-        fi
+    # Download models if specified
+    if [ "$DOWNLOAD_MODELS" = "true" ]; then
+        python3 /workspace/builder.py download --config "$COMFYUI_CONFIG_FILE" || {
+            echo -e "${RED}Failed to download models${NC}"
+        }
     fi
-done
-
-# Download some popular models if specified via environment variable
-if [ "$DOWNLOAD_MODELS" = "true" ]; then
-    echo -e "${YELLOW}Downloading popular models...${NC}"
-
-    # Create model directories
-    mkdir -p /workspace/ComfyUI/models/checkpoints
-    mkdir -p /workspace/ComfyUI/models/vae
-    mkdir -p /workspace/ComfyUI/models/loras
-    mkdir -p /workspace/ComfyUI/models/upscale_models
-
-    # Download a lightweight SD model for testing (SD 1.5)
-    download_if_not_exists \
-        "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors" \
-        "/workspace/ComfyUI/models/checkpoints/v1-5-pruned-emaonly.safetensors"
-
-    # Download VAE
-    download_if_not_exists \
-        "https://huggingface.co/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.safetensors" \
-        "/workspace/ComfyUI/models/vae/vae-ft-mse-840000-ema-pruned.safetensors"
-
-    # Download an upscaler
-    download_if_not_exists \
-        "https://huggingface.co/uwg/upscaler/resolve/main/ESRGAN/ESRGAN_4x.pth" \
-        "/workspace/ComfyUI/models/upscale_models/ESRGAN_4x.pth"
 fi
 
 # Update ComfyUI if specified
@@ -126,22 +173,6 @@ if [ "$AUTO_UPDATE" = "true" ]; then
     cd /workspace/ComfyUI
     git pull || echo -e "${RED}Failed to update ComfyUI${NC}"
     pip install -r requirements.txt --upgrade --quiet || echo -e "${RED}Failed to update requirements${NC}"
-fi
-
-# Create a simple workflow file if it doesn't exist
-if [ ! -f "/workspace/ComfyUI/workflows/default.json" ]; then
-    mkdir -p /workspace/ComfyUI/workflows
-    cat > /workspace/ComfyUI/workflows/default.json << 'EOF'
-{
-    "last_node_id": 1,
-    "last_link_id": 0,
-    "nodes": [],
-    "links": [],
-    "groups": [],
-    "config": {},
-    "version": 0.4
-}
-EOF
 fi
 
 # Change to ComfyUI directory

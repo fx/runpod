@@ -1,12 +1,68 @@
-version: '3.8'
-
 services:
   comfyui:
     build:
       context: .
       dockerfile: Dockerfile
-    image: runpod-comfyui:latest
-    container_name: comfyui
+      args:
+        # Build arguments - can be overridden with --build-arg
+        CONFIG: ${CONFIG:-}
+        PREBAKE: ${PREBAKE:-false}
+
+    container_name: ${CONTAINER_NAME:-comfyui}
+    image: ${IMAGE_NAME:-comfyui:latest}
+
+    # Port mapping
+    ports:
+      - "${COMFYUI_PORT:-8188}:8188"
+
+    # Volume mounts - all directories are created if they don't exist
+    volumes:
+      # Model storage - persistent across rebuilds
+      - ./models:/workspace/ComfyUI/models
+
+      # Input/Output directories
+      - ./output:/workspace/ComfyUI/output
+      - ./input:/workspace/ComfyUI/input
+
+      # Custom nodes - for development and persistence
+      - ./custom_nodes:/workspace/ComfyUI/custom_nodes
+
+      # Workflows directory
+      - ./workflows:/workspace/ComfyUI/workflows
+
+      # Optional: Mount config files (comment out if not needed)
+      # - ./configs:/workspace/configs:ro
+
+    # Environment variables
+    environment:
+      # Configuration loading (priority order):
+      # 1. COMFYUI_CONFIG_URL - Load from URL
+      # 2. COMFYUI_CONFIG_FILE - Load from file path
+      # 3. CONFIG_NAME - Load by config name (flux, sdxl-pony, video, etc.)
+      # 4. Default to base config if none specified
+      CONFIG_NAME: ${CONFIG_NAME:-${CONFIG:-}}
+      COMFYUI_CONFIG_URL: ${COMFYUI_CONFIG_URL:-}
+      COMFYUI_CONFIG_FILE: ${COMFYUI_CONFIG_FILE:-}
+
+      # Model management
+      DOWNLOAD_MODELS: ${DOWNLOAD_MODELS:-false}
+      AUTO_UPDATE: ${AUTO_UPDATE:-false}
+
+      # ComfyUI runtime arguments
+      # Examples: --highvram, --normalvram, --lowvram, --cpu
+      # Leave empty for auto memory management (recommended for 24GB cards)
+      COMFYUI_ARGS: ${COMFYUI_ARGS:-}
+
+      # Preview method
+      COMFYUI_PREVIEW_METHOD: ${COMFYUI_PREVIEW_METHOD:-auto}
+
+      # API tokens for model downloads (optional)
+      HF_TOKEN: ${HF_TOKEN:-}
+      CIVITAI_API_KEY: ${CIVITAI_API_KEY:-}
+
+      # GPU settings
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
 
     # GPU support
     deploy:
@@ -17,65 +73,25 @@ services:
               count: all
               capabilities: [gpu]
 
-    # Environment variables
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
-      - DOWNLOAD_MODELS=false  # Set to true to download base models
-      - AUTO_UPDATE=false      # Set to true to auto-update ComfyUI
-      - DISABLE_AUTO_LAUNCH=true
-      - COMFYUI_PREVIEW_METHOD=auto
-      # Add custom ComfyUI arguments here
-      # - COMFYUI_ARGS=--highvram
-
-    # Port mapping
-    ports:
-      - "8188:8188"
-
-    # Volume mounts for persistent storage
-    volumes:
-      # Models directory - stores all AI models
-      - ./models:/workspace/ComfyUI/models
-      # Output directory - generated images
-      - ./output:/workspace/ComfyUI/output
-      # Input directory - source images for img2img, etc.
-      - ./input:/workspace/ComfyUI/input
-      # Custom nodes - additional ComfyUI extensions
-      - ./custom_nodes:/workspace/ComfyUI/custom_nodes
-      # Workflows - saved ComfyUI workflows
-      - ./workflows:/workspace/ComfyUI/workflows
-      # General storage
-      - ./storage:/workspace/storage
+    # Shared memory size (important for PyTorch data loading)
+    shm_size: '8gb'
 
     # Restart policy
     restart: unless-stopped
 
-    # Network mode (use host for better performance)
-    network_mode: bridge
+    # Interactive terminal (useful for debugging)
+    stdin_open: true
+    tty: true
 
-    # Shared memory size (important for data loading)
-    shm_size: '16gb'
+    # Healthcheck
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8188/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
-    # Resource limits (optional, adjust based on your system)
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '8'
-    #       memory: 32G
-    #     reservations:
-    #       cpus: '4'
-    #       memory: 16G
-
-# Optional: Add a network if you want to run multiple services
+# Default network
 networks:
   default:
     driver: bridge
-
-# Named volumes (optional, if you prefer Docker-managed volumes)
-# volumes:
-#   models:
-#   output:
-#   input:
-#   custom_nodes:
-#   workflows:
-#   storage:

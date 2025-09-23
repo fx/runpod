@@ -1,0 +1,66 @@
+# Docker Compose Override Examples
+#
+# Rename this file to docker-compose.override.yml to use it
+# Docker Compose automatically merges override files with docker-compose.yml
+#
+# Example use cases below - uncomment the sections you need:
+
+services:
+  comfyui:
+    # === EXAMPLE 1: Pre-baked configuration ===
+    # Uncomment to bake a specific config into the image
+    # build:
+    #   args:
+    #     CONFIG: flux
+    #     PREBAKE: "true"
+    # image: comfyui:flux-prebaked
+
+    # === EXAMPLE 2: Development mode ===
+    # Uncomment for development with live code changes
+    # volumes:
+    #   - ./ComfyUI:/workspace/ComfyUI  # Mount entire ComfyUI directory
+    #   - ./configs:/workspace/configs   # Mount config files
+
+    # === EXAMPLE 3: High VRAM configuration ===
+    # Uncomment for 48GB+ GPUs (A6000, A100, H100)
+    # environment:
+    #   COMFYUI_ARGS: --highvram
+
+    # === EXAMPLE 4: CPU-only mode ===
+    # Uncomment to run without GPU
+    # environment:
+    #   COMFYUI_ARGS: --cpu
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices: []  # Remove GPU requirement
+
+    # === EXAMPLE 5: Custom port ===
+    # ports:
+    #   - "8080:8188"
+
+    # === EXAMPLE 6: Specific GPU selection ===
+    # environment:
+    #   NVIDIA_VISIBLE_DEVICES: "0"  # Use only first GPU
+
+# === EXAMPLE 7: Running multiple instances ===
+# Uncomment to run additional ComfyUI instances
+# Each needs unique container name and port
+
+#   comfyui-flux:
+#     extends:
+#       service: comfyui
+#     container_name: comfyui-flux
+#     ports:
+#       - "8189:8188"
+#     environment:
+#       CONFIG_NAME: flux
+#
+#   comfyui-sdxl:
+#     extends:
+#       service: comfyui
+#     container_name: comfyui-sdxl
+#     ports:
+#       - "8190:8188"
+#     environment:
+#       CONFIG_NAME: sdxl-pony

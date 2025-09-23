@@ -73,16 +73,33 @@ docker images | grep comfyui
 ```
 
 ### RunPod Deployment
-```bash
-# After pushing image to Docker Hub, deploy on RunPod:
-# 1. Go to RunPod Dashboard > Templates
-# 2. Create new template using runpod-template.json
-# 3. Deploy a Pod selecting the template
-# 4. Access ComfyUI on port 8188
 
-# Note: RunPod pulls the Docker image from Docker Hub
-# and runs it with the configuration in runpod-template.json
+#### Configure RunPod CLI
+```bash
+# Install RunPod CLI (already done)
+wget -qO- cli.runpod.net | sudo bash
+# Or install locally:
+mkdir -p ~/.local/bin
+wget https://github.com/runpod/runpodctl/releases/latest/download/runpodctl_*_linux_amd64.tar.gz
+tar -xzf runpodctl_*_linux_amd64.tar.gz -C ~/.local/bin
+~/.local/bin/runpodctl config --apiKey "YOUR_RUNPOD_API_KEY"
 ```
+
+#### Deploy via Web Interface
+1. Go to [RunPod Dashboard](https://runpod.io/console/templates)
+2. Click "New Template"
+3. Copy contents from `comfyui/runpod-template.json`
+4. Or use these Docker images directly:
+   - `effekt/runpod-comfyui:base` (4GB, minimal)
+   - `effekt/runpod-comfyui:flux` (with FLUX models)
+   - `effekt/runpod-comfyui:sdxl-pony` (SDXL + Pony)
+   - `effekt/runpod-comfyui:video` (video generation)
+
+#### Template Files
+- `runpod-template.json` - Base configuration
+- `runpod-template-flux.json` - FLUX variant
+- `runpod-template-sdxl-pony.json` - SDXL/Pony variant
+- `runpod-template-video.json` - Video generation
 
 ### GitHub Integration
 ```bash

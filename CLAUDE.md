@@ -2,6 +2,30 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ CRITICAL SECURITY RULES ⚠️
+
+### NEVER COMMIT SECRETS TO THIS REPOSITORY
+
+**ABSOLUTELY FORBIDDEN:**
+- ❌ NEVER add, commit, or push API keys (RunPod, Docker Hub, HuggingFace, etc.)
+- ❌ NEVER hardcode passwords, tokens, or credentials in any file
+- ❌ NEVER include secrets in documentation, comments, or examples
+- ❌ NEVER commit .env files with real credentials
+- ❌ NEVER commit config files containing real API keys
+
+**ALWAYS:**
+- ✅ Use placeholders like `YOUR_API_KEY_HERE` or `<api-key>`
+- ✅ Store secrets locally in `~/.runpod/config.toml` or similar local configs
+- ✅ Use environment variables for runtime secrets
+- ✅ Add sensitive files to `.gitignore`
+- ✅ Double-check every commit for accidental secrets
+
+**Before EVERY commit:**
+1. Review all changes for any strings starting with `rpa_`, `dckr_pat_`, `hf_`, etc.
+2. Check for any base64 encoded strings that might be credentials
+3. Ensure no real URLs with embedded credentials
+4. Verify .env files only contain examples, not real values
+
 ## Project Overview
 
 This repository contains Docker templates for deploying various AI applications on RunPod. Each subdirectory contains a complete Docker setup optimized for RunPod deployment.

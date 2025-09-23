@@ -54,3 +54,8 @@ logs/
 # Environment variables
 .env
 .env.local
+.env.production
+!.env.example
+
+# RunPod CLI config (contains API keys)
+.runpod/

@@ -84,15 +84,10 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ secrets.DOCKERHUB_USERNAME }}/runpod-comfyui
           flavor: |
             latest=false
-            suffix=-${{ matrix.variant }},onlatest=false
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=${{ matrix.variant }},enable={{is_default_branch}}
+            type=raw,value=${{ matrix.variant }}
+            type=raw,value=${{ matrix.variant }}-{{sha}},enable=${{ github.ref != 'refs/heads/main' }}
             type=raw,value=latest,enable=${{ matrix.variant == 'base' && github.ref == 'refs/heads/main' }}
-            type=raw,value=${{ github.event.inputs.tag_name }}-${{ matrix.variant }},enable=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name != '' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5

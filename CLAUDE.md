@@ -144,7 +144,7 @@ curl -X POST https://rest.runpod.io/v1/templates \
     "imageName": "effekt/runpod-comfyui:base",
     "ports": ["8188/http"],
     "volumeInGb": 20,
-    "volumeMountPath": "/runpod-volume",
+    "volumeMountPath": "/runpod",
     "env": {
       "CONFIG_NAME": "base",
       "DOWNLOAD_MODELS": "false",
@@ -198,9 +198,8 @@ runpodctl create pod \
   --name "comfyui-flux" \
   --gpuType "NVIDIA RTX 4090" \
   --communityCloud \
-  --cost 0.5 \
   --volumeSize 50 \
-  --volumePath "/runpod-volume" \
+  --volumePath "/runpod" \
   --ports "8188/http" \
   --startSSH
 
@@ -223,9 +222,8 @@ runpodctl create pod \
   --name "flux-pod" \
   --gpuType "NVIDIA RTX A6000" \
   --communityCloud \
-  --cost 0.8 \
   --volumeSize 50 \
-  --volumePath "/runpod-volume" \
+  --volumePath "/runpod" \
   --ports "8188/http" \
   --startSSH
 ```
@@ -240,12 +238,85 @@ runpodctl create pod \
 - Only terminate pods when explicitly instructed by the user
 - Common causes: missing models, incorrect config, insufficient disk space
 
+##### When Pod Creation Fails: Availability Troubleshooting
+
+When getting "Error: There are no longer any instances available with the requested specifications":
+
+**1. Check GPU Availability Across Clouds:**
+```bash
+# Show all available GPUs with pricing
+runpodctl get cloud
+
+# Show only Secure Cloud GPUs (required for network volumes)
+runpodctl get cloud --secure
+
+# Show only Community Cloud GPUs (cheaper but no network volume support)
+runpodctl get cloud --community
+
+# Check your network volumes and their datacenters
+# First get your API key from config
+grep apikey ~/.runpod/config.toml  # Shows: apikey = "rpa_YOUR_KEY_HERE"
+
+# Then use it in curl commands (replace YOUR_API_KEY with actual key)
+curl -s "https://api.runpod.io/graphql?api_key=YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "query { myself { networkVolumes { id name size dataCenterId } } }"}' | jq .
+
+# List all available datacenters
+curl -s "https://api.runpod.io/graphql?api_key=YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "query { dataCenters { id name location } }"}' | jq .
+
+# Create network volume in specific datacenter
+curl -X POST "https://api.runpod.io/graphql?api_key=YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "mutation { createNetworkVolume(input: {name: \"volume-name\", size: 50, dataCenterId: \"CA-MTL-1\"}) { id name size dataCenterId } }"
+  }' | jq .
+```
+
+**2. Understanding the Problem:**
+- Network volumes are tied to specific datacenters (e.g., US-TX-3)
+- GPUs shown as available in Secure Cloud may not be in YOUR datacenter
+- The CLI error doesn't specify which constraint is failing
+
+**3. Decision Matrix When Creation Fails:**
+
+| Scenario | Solution | Trade-off |
+|----------|----------|-----------|
+| No GPUs in network volume's datacenter | Option 1: Wait for availability<br>Option 2: Create new network volume in different datacenter<br>Option 3: Launch without network volume temporarily | 1: Delay<br>2: Re-download everything<br>3: No persistence |
+| GPU type not available | Try alternative GPU types in same tier:<br>• A6000 → A5000/A4500<br>• RTX 4090 → RTX 4080/3090<br>• Check VRAM requirements | May affect performance |
+| Secure Cloud full | Use Community Cloud without network volume | Lose persistent storage |
+
+**4. Provide Clear Information to User:**
+When pod creation fails, ALWAYS provide:
+- Current GPU availability table (from `runpodctl get cloud --secure`)
+- Network volume location (datacenter)
+- Alternative options with clear trade-offs
+- DO NOT repeatedly try the same command without explaining the issue
+
+**Example Response When Creation Fails:**
+```
+Pod creation failed. Here's the current availability:
+
+SECURE CLOUD (supports network volumes):
+• RTX A6000: $0.33/hr (available but not in US-TX-3 where your volume is)
+• RTX 4090: $0.29/hr (limited availability in US-TX-3)
+• RTX A5000: $0.14/hr (available in multiple datacenters)
+
+Your network volume is in US-TX-3. Options:
+1. Wait for A6000 availability in US-TX-3
+2. Use RTX A5000 instead (less VRAM but available)
+3. Create new network volume in different datacenter
+4. Launch in Community Cloud without persistence (immediate availability)
+```
+
 **💾 Persistent Network Volumes (CRITICAL FOR EFFICIENCY)**
 
 **Key Requirements:**
 - ⚠️ **Network volumes ONLY work with Secure Cloud** (`--secureCloud`), NOT Community Cloud
 - ⚠️ **Must be created BEFORE pod deployment** - cannot attach to existing pods
-- Mounted at `/runpod-volume` and persists across pod terminations
+- Mounted at `/runpod` and persists across pod terminations
 - Saves models, venv cache, and data - eliminates repeated downloads
 - **Use North American datacenters only** (US-* or CA-*) for better latency
 
@@ -324,7 +395,7 @@ ssh root@<pod-ip> -p <port> -i ~/.ssh/id_rsa
 # - Check ComfyUI logs: tail -f /workspace/logs/comfyui.log
 # - Check system logs: journalctl -xe
 # - Monitor GPU: nvidia-smi
-# - Check disk usage: df -h /runpod-volume
+# - Check disk usage: df -h /runpod
 
 # Stop pod (keeps data)
 runpodctl stop pod <pod-id>
@@ -410,14 +481,14 @@ The system uses YAML configurations to define everything about a ComfyUI setup:
 The `entrypoint.sh` script handles initialization in this sequence:
 1. **Config Loading**: Loads configuration from URL, file, name, or defaults to base config
 2. **RunPod Detection**: Checks for `RUNPOD_POD_ID` environment variable
-3. **Storage Setup**: Creates symlinks to `/runpod-volume` if network storage is available
+3. **Storage Setup**: Creates symlinks to `/runpod` if network storage is available
 4. **Config Application**: Uses builder.py to install nodes and download models from config
 5. **ComfyUI Launch**: Starts server with config-defined environment variables
 
 ### RunPod Integration
 
 When deployed on RunPod:
-- Persistent storage is mounted at `/runpod-volume` and symlinked to ComfyUI directories
+- Persistent storage is mounted at `/runpod` and symlinked to ComfyUI directories
 - Environment variables from `runpod-template.json` configure the container
 - Port 8188 is exposed with automatic HTTPS proxy
 - GPU is automatically detected and configured

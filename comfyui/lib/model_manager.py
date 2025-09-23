@@ -26,7 +26,7 @@ class ModelManager:
         self.base_dir = base_dir
 
         # Check for network volume (RunPod persistent storage)
-        network_volume = Path('/runpod-volume')
+        network_volume = Path('/runpod')
         if network_volume.exists() and network_volume.is_dir():
             # Use network volume for caching to persist across pod restarts
             self.cache_dir = network_volume / 'cache' / 'models'

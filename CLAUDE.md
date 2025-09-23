@@ -98,6 +98,20 @@ docker images | grep comfyui
 
 ### RunPod Deployment
 
+#### IMPORTANT: Use runpodctl for Pod Operations
+
+**ALWAYS use `runpodctl` for pod management operations:**
+- ✅ Creating/starting pods: `runpodctl pod create`
+- ✅ Stopping/terminating pods: `runpodctl pod stop`, `runpodctl pod terminate`
+- ✅ Listing pods: `runpodctl pod list`
+- ✅ Getting pod details: `runpodctl pod get <pod-id>`
+- ✅ SSH into pods: `runpodctl pod ssh <pod-id>`
+- ✅ Port forwarding: `runpodctl pod port-forward <pod-id>`
+
+**Only use the REST API for:**
+- Template management (create/list/delete templates)
+- Operations not supported by runpodctl
+
 #### Configure RunPod CLI
 ```bash
 # Install RunPod CLI (already done)
@@ -157,7 +171,100 @@ curl -X DELETE https://rest.runpod.io/v1/templates/{template_id} \
   -H "Authorization: Bearer ${API_KEY}"
 ```
 
-#### Deploy via Web Interface
+#### Deploy Pods with runpodctl
+
+##### Get Available Templates
+```bash
+# Note: runpodctl doesn't support template listing, use API instead
+API_KEY=$(grep apikey ~/.runpod/config.toml | cut -d'"' -f2)
+
+# List all templates with their IDs
+curl -s -X GET https://rest.runpod.io/v1/templates \
+  -H "Authorization: Bearer ${API_KEY}" | python3 -m json.tool
+
+# Get just template names and IDs
+curl -s -X GET https://rest.runpod.io/v1/templates \
+  -H "Authorization: Bearer ${API_KEY}" | \
+  python3 -c "import json,sys; data=json.load(sys.stdin); [print(f\"{t['id']}: {t['name']}\") for t in data]"
+```
+
+##### Start a Spot Pod
+```bash
+# Start spot pod with specific template
+# Note: --imageName is required even when using --templateId
+runpodctl create pod \
+  --imageName "effekt/runpod-comfyui:flux" \
+  --templateId <template-id> \
+  --name "comfyui-flux" \
+  --gpuType "NVIDIA RTX 4090" \
+  --communityCloud \
+  --cost 0.5 \
+  --volumeSize 50 \
+  --volumePath "/runpod-volume" \
+  --ports "8188/http" \
+  --startSSH
+
+# For FLUX specifically (template ID: xou8auq29i):
+runpodctl create pod \
+  --imageName "effekt/runpod-comfyui:flux" \
+  --templateId xou8auq29i \
+  --name "flux-pod" \
+  --gpuType "NVIDIA RTX A6000" \
+  --communityCloud \
+  --cost 0.8 \
+  --volumeSize 50 \
+  --volumePath "/runpod-volume" \
+  --ports "8188/http" \
+  --startSSH
+```
+
+##### Manage Running Pods
+
+**⚠️ IMPORTANT: Pod Troubleshooting ⚠️**
+- If a pod doesn't become ready within 15 minutes of creation, it's likely crash-looping
+- **View logs in RunPod Console**: `https://console.runpod.io/pods?id=<pod_id>`
+- RunPod API does NOT provide log access - you MUST use the web console
+- **NEVER REMOVE PODS WITH ERRORS** - Keep them running so logs can be checked
+- Only terminate pods when explicitly instructed by the user
+- Common causes: missing models, incorrect config, insufficient disk space
+
+**💾 Persistent Volumes**
+- Use network volumes to avoid re-downloading models and dependencies
+- Create with: `--networkVolumeId <volume-id>` when creating pods
+- Volumes persist data between pod restarts, saving time and bandwidth
+- **Use North American datacenters only** (US-* or CA-*) for better latency and availability
+
+```bash
+# List all pods
+runpodctl get pod
+
+# Get pod details
+runpodctl get pod <pod-id>
+
+# Get SSH connection command (use when pod is ready)
+runpodctl ssh connect <pod-id>
+
+# SSH into pod (primary method for interacting with pods)
+# Note: runpodctl doesn't support logs, exec commands, etc.
+# Use SSH for all pod interaction like checking logs, running commands
+ssh root@<pod-ip> -p <port> -i ~/.ssh/id_rsa
+# Example SSH commands:
+# - Check ComfyUI logs: tail -f /workspace/logs/comfyui.log
+# - Check system logs: journalctl -xe
+# - Monitor GPU: nvidia-smi
+# - Check disk usage: df -h /runpod-volume
+
+# Stop pod (keeps data)
+runpodctl stop pod <pod-id>
+
+# Terminate pod (deletes everything)
+runpodctl remove pod <pod-id>
+
+# Port forward to local machine (if needed for local access)
+ssh -L 8188:localhost:8188 root@<pod-ip> -p <port>
+```
+
+#### Deploy via Web Interface (Alternative)
 1. Go to [RunPod Dashboard](https://runpod.io/console/templates)
 2. Templates already created via API will appear here
 3. Click "Deploy" on any template

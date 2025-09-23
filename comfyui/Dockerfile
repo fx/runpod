@@ -62,6 +62,17 @@ RUN pip install --upgrade --no-cache-dir pip setuptools wheel && \
     psutil \
     "huggingface-hub[cli]"
 
+# Install PyTorch with CUDA support and torchvision in the base image
+# This ensures torchvision's C++ extensions (like NMS) are properly compiled
+RUN pip install --no-cache-dir \
+    torch==2.2.0 \
+    torchvision==0.17.0 \
+    torchaudio==2.2.0 \
+    --index-url https://download.pytorch.org/whl/cu121
+
+# Install xformers for memory efficiency
+RUN pip install --no-cache-dir xformers==0.0.24 --index-url https://download.pytorch.org/whl/cu121
+
 # Clone ComfyUI (shallow clone to save space)
 RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git $COMFYUI_PATH
 

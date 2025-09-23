@@ -82,20 +82,70 @@ wget -qO- cli.runpod.net | sudo bash
 mkdir -p ~/.local/bin
 wget https://github.com/runpod/runpodctl/releases/latest/download/runpodctl_*_linux_amd64.tar.gz
 tar -xzf runpodctl_*_linux_amd64.tar.gz -C ~/.local/bin
-~/.local/bin/runpodctl config --apiKey "YOUR_RUNPOD_API_KEY"
+
+# Configure with API key (get from https://www.runpod.io/console/user/settings)
+# IMPORTANT: API keys start with "rpa_"
+~/.local/bin/runpodctl config --apiKey "rpa_YOUR_API_KEY_HERE"
+# Config saved to ~/.runpod/config.toml
+```
+
+#### Managing Templates via API
+
+##### Create Template
+```bash
+# API endpoint: https://rest.runpod.io/v1/templates (NOT api.runpod.io)
+# Get API key from: https://www.runpod.io/console/user/settings
+
+API_KEY=$(grep apikey ~/.runpod/config.toml | cut -d'"' -f2)
+
+curl -X POST https://rest.runpod.io/v1/templates \
+  -H "Authorization: Bearer ${API_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "ComfyUI Minimal",
+    "imageName": "effekt/runpod-comfyui:base",
+    "ports": ["8188/http"],
+    "volumeInGb": 20,
+    "volumeMountPath": "/runpod-volume",
+    "env": {
+      "CONFIG_NAME": "base",
+      "DOWNLOAD_MODELS": "false",
+      "AUTO_UPDATE": "false"
+    }
+  }'
+
+# Note: Unsupported fields will cause errors. Valid fields:
+# - name, imageName (required)
+# - ports (array), volumeInGb, volumeMountPath, env (object)
+# - category, containerDiskInGb, containerRegistryAuthId, readme
+# NOT supported: dockerArgs, startSsh, startJupyter (added automatically)
+```
+
+##### List Templates
+```bash
+curl -X GET https://rest.runpod.io/v1/templates \
+  -H "Authorization: Bearer ${API_KEY}"
+```
+
+##### Delete Template
+```bash
+curl -X DELETE https://rest.runpod.io/v1/templates/{template_id} \
+  -H "Authorization: Bearer ${API_KEY}"
 ```
 
 #### Deploy via Web Interface
 1. Go to [RunPod Dashboard](https://runpod.io/console/templates)
-2. Click "New Template"
-3. Copy contents from `comfyui/runpod-template.json`
-4. Or use these Docker images directly:
-   - `effekt/runpod-comfyui:base` (4GB, minimal)
-   - `effekt/runpod-comfyui:flux` (with FLUX models)
-   - `effekt/runpod-comfyui:sdxl-pony` (SDXL + Pony)
-   - `effekt/runpod-comfyui:video` (video generation)
+2. Templates already created via API will appear here
+3. Click "Deploy" on any template
+4. Access ComfyUI at: `https://{pod-id}-8188.proxy.runpod.net`
 
-#### Template Files
+#### Available Docker Images
+- `effekt/runpod-comfyui:base` (4GB, minimal)
+- `effekt/runpod-comfyui:flux` (with FLUX models)
+- `effekt/runpod-comfyui:sdxl-pony` (SDXL + Pony)
+- `effekt/runpod-comfyui:video` (video generation)
+
+#### Template Files (for reference)
 - `runpod-template.json` - Base configuration
 - `runpod-template-flux.json` - FLUX variant
 - `runpod-template-sdxl-pony.json` - SDXL/Pony variant

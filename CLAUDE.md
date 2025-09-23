@@ -205,6 +205,18 @@ runpodctl create pod \
   --startSSH
 
 # For FLUX specifically (template ID: xou8auq29i):
+# Option 1: With network volume (RECOMMENDED - Secure Cloud)
+runpodctl create pod \
+  --imageName "effekt/runpod-comfyui:flux" \
+  --templateId xou8auq29i \
+  --name "flux-pod" \
+  --gpuType "NVIDIA GeForce RTX 4090" \
+  --secureCloud \
+  --networkVolumeId "neowgnh06n" \
+  --ports "8188/http" \
+  --startSSH
+
+# Option 2: Without network volume (Community Cloud - cheaper but no persistence)
 runpodctl create pod \
   --imageName "effekt/runpod-comfyui:flux" \
   --templateId xou8auq29i \
@@ -228,11 +240,71 @@ runpodctl create pod \
 - Only terminate pods when explicitly instructed by the user
 - Common causes: missing models, incorrect config, insufficient disk space
 
-**💾 Persistent Volumes**
-- Use network volumes to avoid re-downloading models and dependencies
-- Create with: `--networkVolumeId <volume-id>` when creating pods
-- Volumes persist data between pod restarts, saving time and bandwidth
-- **Use North American datacenters only** (US-* or CA-*) for better latency and availability
+**💾 Persistent Network Volumes (CRITICAL FOR EFFICIENCY)**
+
+**Key Requirements:**
+- ⚠️ **Network volumes ONLY work with Secure Cloud** (`--secureCloud`), NOT Community Cloud
+- ⚠️ **Must be created BEFORE pod deployment** - cannot attach to existing pods
+- Mounted at `/runpod-volume` and persists across pod terminations
+- Saves models, venv cache, and data - eliminates repeated downloads
+- **Use North American datacenters only** (US-* or CA-*) for better latency
+
+**Creating a Network Volume:**
+```bash
+# Get API key
+API_KEY=$(grep apikey ~/.runpod/config.toml | cut -d'"' -f2)
+
+# Create network volume (50GB in US-TX-3 datacenter)
+curl -X POST "https://api.runpod.io/graphql" \
+  -H "Authorization: Bearer ${API_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "mutation {
+      createNetworkVolume(input: {
+        name: \"comfyui-persistent\",
+        size: 50,
+        dataCenterId: \"US-TX-3\"
+      }) {
+        id
+        name
+      }
+    }"
+  }'
+
+# List existing network volumes
+curl -X POST "https://api.runpod.io/graphql" \
+  -H "Authorization: Bearer ${API_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "query { myself { networkVolumes { id name size dataCenterId } } }"}'
+```
+
+**Using Network Volume with Pod:**
+```bash
+# CORRECT: Secure Cloud with network volume
+runpodctl create pod \
+  --imageName "effekt/runpod-comfyui:base" \
+  --name "pod-with-persistence" \
+  --gpuType "NVIDIA GeForce RTX 4090" \
+  --secureCloud \  # MUST use Secure Cloud for network volumes
+  --networkVolumeId "neowgnh06n" \  # Attach the network volume
+  --ports "8188/http" \
+  --startSSH
+
+# WRONG: Community Cloud doesn't support network volumes
+# --communityCloud  # ❌ Will fail with network volumes
+```
+
+**Current Network Volume:**
+- **ID**: `neowgnh06n` (comfyui-persistent, 50GB, US-TX-3)
+- Use this for all pods to maintain persistent storage
+- Cost: $0.07/GB/month = $3.50/month for 50GB
+- Saves time and bandwidth by eliminating repeated model downloads
+
+**Secure Cloud vs Community Cloud:**
+- **Secure Cloud**: More expensive GPUs, supports network volumes, better availability
+- **Community Cloud**: Cheaper GPUs, NO network volume support, may have less availability
+- For development with frequent restarts: Use Secure Cloud + network volume
+- For one-time runs: Community Cloud may be more cost-effective
 
 ```bash
 # List all pods

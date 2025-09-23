@@ -13,11 +13,24 @@ echo -e "${GREEN}Starting ComfyUI initialization...${NC}"
 install_python_packages() {
     echo -e "${YELLOW}Installing Python dependencies...${NC}"
 
-    # Use cache directory if available
-    CACHE_DIR="/workspace/venv-cache"
-    if [ -d "$CACHE_DIR" ]; then
+    # Check for network volume and use it for caching
+    if [ -d "/runpod-volume" ]; then
+        # Use network volume for persistent cache across pod restarts
+        CACHE_DIR="/runpod-volume/cache"
         export PIP_CACHE_DIR="$CACHE_DIR/pip"
-        mkdir -p "$PIP_CACHE_DIR"
+        export TORCH_HOME="$CACHE_DIR/torch"
+        export HF_HOME="$CACHE_DIR/huggingface"
+        export XDG_CACHE_HOME="$CACHE_DIR"
+
+        mkdir -p "$PIP_CACHE_DIR" "$TORCH_HOME" "$HF_HOME"
+        echo -e "${GREEN}Using network volume for caching: $CACHE_DIR${NC}"
+    else
+        # Fallback to local cache
+        CACHE_DIR="/workspace/venv-cache"
+        if [ -d "$CACHE_DIR" ]; then
+            export PIP_CACHE_DIR="$CACHE_DIR/pip"
+            mkdir -p "$PIP_CACHE_DIR"
+        fi
     fi
 
     # Check if PyTorch and torchvision are already installed
@@ -188,12 +201,12 @@ if [ ! -z "$RUNPOD_POD_ID" ]; then
         if [ -d "/runpod-volume" ]; then
             echo -e "${YELLOW}Setting up persistent storage symlinks...${NC}"
 
-            # Create directories on network volume if they don't exist
-            mkdir -p /runpod-volume/ComfyUI/models
-            mkdir -p /runpod-volume/ComfyUI/output
-            mkdir -p /runpod-volume/ComfyUI/input
-            mkdir -p /runpod-volume/ComfyUI/custom_nodes
-            mkdir -p /runpod-volume/venv-cache
+            # Create organized cache structure on network volume
+            mkdir -p /runpod-volume/cache/{pip,torch,huggingface,models}
+            mkdir -p /runpod-volume/ComfyUI/{models,output,input,custom_nodes}
+
+            # Create model subdirectories for better organization
+            mkdir -p /runpod-volume/ComfyUI/models/{checkpoints,clip,clip_vision,controlnet,diffusers,embeddings,gligen,hypernetworks,loras,style_models,unet,upscale_models,vae,vae_approx}
 
             # Create symlinks only if they don't exist
             if [ ! -L "/workspace/ComfyUI/models" ] || [ ! -e "/workspace/ComfyUI/models" ]; then
@@ -211,11 +224,13 @@ if [ ! -z "$RUNPOD_POD_ID" ]; then
                 ln -sf /runpod-volume/ComfyUI/input /workspace/ComfyUI/input
             fi
 
-            # Link venv cache for faster subsequent startups
-            if [ ! -L "/workspace/venv-cache" ] || [ ! -e "/workspace/venv-cache" ]; then
-                rm -rf /workspace/venv-cache
-                ln -sf /runpod-volume/venv-cache /workspace/venv-cache
-            fi
+            # Set cache environment variables for this session
+            export PIP_CACHE_DIR="/runpod-volume/cache/pip"
+            export TORCH_HOME="/runpod-volume/cache/torch"
+            export HF_HOME="/runpod-volume/cache/huggingface"
+            export XDG_CACHE_HOME="/runpod-volume/cache"
+
+            echo -e "${GREEN}Network volume setup complete with organized cache structure${NC}"
         fi
     fi
 else

@@ -24,7 +24,20 @@ class ModelManager:
 
     def __init__(self, base_dir: Path):
         self.base_dir = base_dir
-        self.cache_dir = base_dir / '.cache' / 'models'
+
+        # Check for network volume (RunPod persistent storage)
+        network_volume = Path('/runpod-volume')
+        if network_volume.exists() and network_volume.is_dir():
+            # Use network volume for caching to persist across pod restarts
+            self.cache_dir = network_volume / 'cache' / 'models'
+            self.using_network_volume = True
+            logger.info(f"Using network volume for model cache: {self.cache_dir}")
+        else:
+            # Fallback to local cache
+            self.cache_dir = base_dir / '.cache' / 'models'
+            self.using_network_volume = False
+            logger.info(f"Using local cache: {self.cache_dir}")
+
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
         # Load environment variables
@@ -85,15 +98,33 @@ class ModelManager:
     def _download_direct(self, url: str, name: str, output_dir: Path, filename: Optional[str] = None) -> bool:
         """Download a file directly from a URL."""
         try:
+            import shutil
+
             if filename is None:
                 filename = name + self._get_extension_from_url(url)
 
             output_path = output_dir / filename
 
-            # Check if already downloaded
+            # Check if already exists at destination
             if output_path.exists():
                 logger.info(f"Model already exists: {output_path}")
                 return True
+
+            # Generate cache path based on URL hash for unique identification
+            url_hash = hashlib.sha256(url.encode()).hexdigest()[:16]
+            cache_filename = f"{url_hash}_{filename}"
+            cache_path = self.cache_dir / cache_filename
+
+            # Check if exists in cache
+            if cache_path.exists() and cache_path.stat().st_size > 0:
+                logger.info(f"Found model in cache, copying from: {cache_path}")
+                try:
+                    # Copy from cache to destination
+                    shutil.copy2(cache_path, output_path)
+                    logger.info(f"Successfully copied from cache: {filename}")
+                    return True
+                except Exception as e:
+                    logger.warning(f"Failed to copy from cache: {e}, will download fresh")
 
             headers = {}
             if self.hf_token and 'huggingface.co' in url:
@@ -104,12 +135,20 @@ class ModelManager:
 
             total_size = int(response.headers.get('content-length', 0))
 
+            # Download to cache first if using network volume
+            download_path = cache_path if self.using_network_volume else output_path
+
             # Download with progress bar
-            with open(output_path, 'wb') as f:
+            with open(download_path, 'wb') as f:
                 with tqdm(total=total_size, unit='B', unit_scale=True, desc=filename) as pbar:
                     for chunk in response.iter_content(chunk_size=8192):
                         f.write(chunk)
                         pbar.update(len(chunk))
+
+            # If we downloaded to cache, copy to final destination
+            if self.using_network_volume and download_path != output_path:
+                logger.info(f"Copying from cache to destination: {output_path}")
+                shutil.copy2(download_path, output_path)
 
             logger.info(f"Successfully downloaded: {filename}")
             return True

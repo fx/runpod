@@ -112,16 +112,27 @@ The Docker container is built in layers:
 2. **Python Environment**: Python 3.11 with venv isolation at `/opt/venv`
 3. **PyTorch Layer**: CUDA-enabled PyTorch 2.2.0 with xformers for optimization
 4. **ComfyUI Core**: Cloned from official repository to `/workspace/ComfyUI`
-5. **Extensions**: ComfyUI Manager and popular custom nodes pre-installed
+5. **Extensions**: ComfyUI Manager pre-installed, others loaded from config
+
+### Configuration System
+
+The system uses YAML configurations to define everything about a ComfyUI setup:
+- **Nodes**: Custom nodes to install from GitHub
+- **Models**: Models to download from HuggingFace, CivitAI, or direct URLs
+- **Requirements**: Python packages to install
+- **Workflows**: Pre-built ComfyUI workflows to include
+- **Environment Variables**: Runtime settings
+
+**IMPORTANT**: Nothing that can be defined in config files should be hardcoded in entrypoint.sh or Python scripts. All defaults belong in `config-base.yaml`.
 
 ### Startup Flow
 
 The `entrypoint.sh` script handles initialization in this sequence:
-1. **RunPod Detection**: Checks for `RUNPOD_POD_ID` environment variable
-2. **Storage Setup**: Creates symlinks to `/runpod-volume` if network storage is available
-3. **Custom Nodes**: Installs pre-defined list of popular extensions with their requirements
-4. **Model Downloads**: Optionally downloads base SD 1.5 model if `DOWNLOAD_MODELS=true`
-5. **ComfyUI Launch**: Starts server with appropriate GPU/CPU flags
+1. **Config Loading**: Loads configuration from URL, file, name, or defaults to base config
+2. **RunPod Detection**: Checks for `RUNPOD_POD_ID` environment variable
+3. **Storage Setup**: Creates symlinks to `/runpod-volume` if network storage is available
+4. **Config Application**: Uses builder.py to install nodes and download models from config
+5. **ComfyUI Launch**: Starts server with config-defined environment variables
 
 ### RunPod Integration
 
@@ -148,14 +159,11 @@ When deployed on RunPod:
 
 ## Custom Node Management
 
-The template pre-installs these nodes via `entrypoint.sh`:
-- AnimateDiff Evolved (animation)
-- IPAdapter Plus (image prompting)
-- ControlNet Auxiliary (control inputs)
-- Ultimate SD Upscale (high-res generation)
-- Efficiency Nodes (workflow optimization)
-
-Additional nodes can be installed via ComfyUI Manager UI or by modifying the `custom_nodes` array in `entrypoint.sh`.
+Custom nodes are defined in configuration files (e.g., `config-base.yaml`, `config-flux.yaml`):
+- Each config specifies which nodes to install
+- Nodes are installed from GitHub repositories
+- ComfyUI Manager is always pre-installed for UI-based management
+- Additional nodes can be added by modifying the config files
 
 ## Memory Optimization
 

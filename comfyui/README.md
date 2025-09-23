@@ -84,21 +84,26 @@ docker-compose up -d
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DOWNLOAD_MODELS` | `false` | Download base SD 1.5 model on startup |
+| `DOWNLOAD_MODELS` | `false` | Download models from config on startup |
 | `AUTO_UPDATE` | `false` | Auto-update ComfyUI on startup |
 | `DISABLE_AUTO_LAUNCH` | `true` | Disable browser auto-launch |
 | `COMFYUI_PREVIEW_METHOD` | `auto` | Preview method: auto, latent2rgb, or taesd |
 | `COMFYUI_ARGS` | `""` | Additional ComfyUI arguments |
+| `CONFIG_NAME` | `base` | Configuration to load (flux, sdxl-pony, video, etc.) |
+| `HF_TOKEN` | `""` | HuggingFace token for gated models (FLUX, etc.) |
 
 ### Memory Optimization Arguments
 
 Add to `COMFYUI_ARGS` based on your GPU:
 
-- **High VRAM (24GB+)**: `--highvram`
-- **Normal VRAM (12-16GB)**: Default settings
-- **Low VRAM (8-12GB)**: `--normalvram`
-- **Very Low VRAM (4-8GB)**: `--lowvram`
+- **48GB+ VRAM** (A6000, A100, H100): `--highvram` (keeps everything in VRAM)
+- **24-32GB VRAM** (RTX 4090, A5000): Default (empty string) - auto memory management
+- **12-16GB VRAM** (RTX 4070 Ti, RTX 3060): Default or `--normalvram`
+- **8-12GB VRAM** (RTX 4060, RTX 3050): `--lowvram`
+- **4-8GB VRAM**: `--lowvram` or `--cpu`
 - **CPU Mode**: `--cpu` (automatically detected if no GPU)
+
+**Important**: Using `--highvram` on 24GB cards can cause OOM errors. The default auto memory management works best for RTX 4090/A5000 cards.
 
 ## Installing Models
 
@@ -107,11 +112,38 @@ Add to `COMFYUI_ARGS` based on your GPU:
 2. Click on "Manager" button
 3. Install models directly from the UI
 
-### Option 2: Manual Download
-1. SSH into your RunPod instance
+### Option 2: Using Builder Tool (For Config-based Downloads)
+
+#### Authenticate with HuggingFace (for gated models)
+Some models like FLUX require authentication. The container includes the HuggingFace CLI:
+```bash
+# Login to HuggingFace (one-time setup)
+docker compose exec comfyui huggingface-cli login
+# Enter your HF token when prompted (get from https://huggingface.co/settings/tokens)
+
+# Or pass token via environment variable
+export HF_TOKEN=your_token_here
+docker compose exec comfyui huggingface-cli login --token $HF_TOKEN
+```
+
+#### Download models using builder tool
+```bash
+# Attach shell to running container
+docker compose exec comfyui bash
+
+# Download models for a specific config (from inside container)
+cd /workspace
+python builder.py download --config /workspace/configs/config-flux.yaml
+
+# Or run directly without attaching:
+docker compose exec comfyui python /workspace/builder.py download --config /workspace/configs/config-flux.yaml
+```
+
+### Option 3: Manual Download
+1. SSH into your RunPod instance or attach to container
 2. Download models to `/workspace/ComfyUI/models/checkpoints/`
 
-### Option 3: Pre-download
+### Option 4: Pre-download at Startup
 Set `DOWNLOAD_MODELS=true` to download base models on startup
 
 ## Popular Models
@@ -184,7 +216,10 @@ Setup:
 - Verify Docker GPU support: `docker run --gpus all nvidia/cuda:12.1.0-base nvidia-smi`
 
 ### Out of Memory errors
-- Add `--lowvram` or `--cpu` to `COMFYUI_ARGS`
+
+- If using `--highvram` on 24-32GB cards, remove it (use default)
+- For persistent OOM, add `--normalvram` or `--lowvram`
+- For 8GB or less VRAM, use `--lowvram` or `--cpu`
 - Reduce batch size in ComfyUI
 - Use smaller models
 

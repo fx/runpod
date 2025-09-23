@@ -60,6 +60,16 @@ docker images | grep comfyui
 
 # Image names use the pattern: effekt/runpod-[template-name]
 # For ComfyUI: effekt/runpod-comfyui
+
+# Docker Tag Structure:
+# - effekt/runpod-comfyui:base (minimal, also tagged as 'latest')
+# - effekt/runpod-comfyui:flux (FLUX models)
+# - effekt/runpod-comfyui:sdxl-pony (SDXL and Pony models)
+# - effekt/runpod-comfyui:video (video generation models)
+
+# Note: Docker CLI can be used for most operations since it's logged in
+# To check login: docker info | grep Username
+# To delete tags: Must be done via Docker Hub web interface (API requires special permissions)
 ```
 
 ### RunPod Deployment

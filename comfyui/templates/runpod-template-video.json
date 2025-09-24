@@ -1,6 +1,6 @@
 {
   "name": "ComfyUI Video Edition",
-  "imageName": "ghcr.io/effekt/runpod-comfyui:video",
+  "imageName": "ghcr.io/fx/runpod-comfyui:video",
   "description": "ComfyUI pre-configured for video models with optimized settings.",
   "volumeInGb": 50,
   "containerDiskInGb": 20,

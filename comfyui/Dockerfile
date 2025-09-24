@@ -1,5 +1,5 @@
-# Minimal base image with CUDA support (12.4 for RTX 5090)
-FROM nvcr.io/nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04 AS base
+# Base image with CUDA 12.9.1 from NGC catalog (minimum for modern GPUs)
+FROM nvcr.io/nvidia/cuda:12.9.1-cudnn-runtime-ubuntu22.04 AS base
 
 # Build arguments
 ARG BUILD_DATE
@@ -55,33 +55,19 @@ ENV PATH="$VENV_PATH/bin:$PATH"
 # Upgrade pip first
 RUN pip install --upgrade --no-cache-dir pip setuptools wheel
 
-# Install PyTorch 2.6.0 with CUDA 12.4 (latest stable, RTX 5090 support)
-RUN pip install --no-cache-dir \
-    torch==2.6.0 \
-    torchvision==0.21.0 \
-    torchaudio==2.6.0 \
-    --index-url https://download.pytorch.org/whl/cu124
-
-# Install xformers for memory efficiency (latest for PyTorch 2.6.0)
-RUN pip install --no-cache-dir xformers --index-url https://download.pytorch.org/whl/cu124
+# Install builder requirements (needed for runtime config loading)
+COPY requirements-builder.txt /workspace/requirements-builder.txt
+RUN pip install --no-cache-dir -r /workspace/requirements-builder.txt
 
 # Clone ComfyUI (shallow clone to save space)
 RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git $COMFYUI_PATH
 
-# Install ComfyUI's requirements (just like ValyrianTech does)
-RUN cd $COMFYUI_PATH && \
-    pip install --no-cache-dir -r requirements.txt
-
-# Install additional tools we need for runtime
-RUN pip install --no-cache-dir \
-    pyyaml \
-    hiyapyco \
-    requests \
-    "huggingface-hub[cli]"
-
 # Install ComfyUI Manager (essential for UI)
 RUN cd $COMFYUI_PATH/custom_nodes && \
     git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager.git
+
+# Create a marker for PyTorch installation
+RUN touch /workspace/.needs_pytorch
 
 # ComfyUI will create directories as needed when downloading models
 

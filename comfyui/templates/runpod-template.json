@@ -1,6 +1,6 @@
 {
   "name": "ComfyUI with Configuration System",
-  "imageName": "ghcr.io/effekt/runpod-comfyui:base",
+  "imageName": "ghcr.io/fx/runpod-comfyui:base",
   "description": "ComfyUI with flexible configuration system. Supports base, flux, sdxl-pony, and video variants.",
   "volumeInGb": 20,
   "containerDiskInGb": 10,

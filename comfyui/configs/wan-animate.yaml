@@ -1,0 +1,151 @@
+name: wan-animate
+version: 1.0.0
+base_image: effekt/runpod-comfyui:base
+description: WanVideo Animate setup with all required nodes for face animation
+extends: base.yaml  # Inherit from base configuration
+
+# Nodes required for WanVideo Animate workflow
+nodes:
+  # WanVideo wrapper - ESSENTIAL for all WanVideo nodes
+  - url: https://github.com/kijai/ComfyUI-WanVideoWrapper
+    description: WanVideo wrapper - provides all WanVideo nodes
+
+  # DWPose for pose detection (required by DWPreprocessor)
+  - url: https://github.com/IDEA-Research/DWPose
+    description: DWPose - Advanced whole-body pose estimation
+
+  # ControlNet Aux for preprocessors including DWPose
+  - url: https://github.com/Fannovel16/comfyui_controlnet_aux
+    description: ControlNet auxiliary preprocessors including DWPose
+
+  # SAM2 for segmentation (required by Sam2Segmentation)
+  - url: https://github.com/storyicon/comfyui_segment_anything
+    description: SAM2 segmentation for video masking
+
+  # KJ nodes for utilities and image operations
+  - url: https://github.com/kijai/ComfyUI-KJNodes
+    description: KJ nodes for image processing and utilities
+
+  # Video Helper Suite for video processing
+  - url: https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
+    description: Video helper suite for processing
+
+  # Inspire Pack for GetNode/SetNode functionality
+  - url: https://github.com/ltdrdata/ComfyUI-Inspire-Pack
+    description: Inspire Pack utilities including GetNode/SetNode
+
+  # Essentials for basic operations
+  - url: https://github.com/cubiq/ComfyUI_essentials
+    description: Essential utilities for image processing
+
+  # Impact Pack for additional utilities
+  - url: https://github.com/ltdrdata/ComfyUI-Impact-Pack
+    description: Impact Pack for additional utilities
+
+# Python requirements for the nodes
+requirements:
+  # Core requirements
+  - torch>=2.1.0
+  - torchvision>=0.16.0
+  - numpy>=1.24.0
+  - pillow>=10.0.0
+  - opencv-python-headless>=4.8.0
+  - scikit-image>=0.21.0
+
+  # Video processing
+  - imageio>=2.31.0
+  - imageio-ffmpeg>=0.4.9
+  - ffmpeg-python>=0.2.0
+
+  # WanVideo specific
+  - einops>=0.7.0
+  - omegaconf>=2.3.0
+  - transformers>=4.35.0
+  - safetensors>=0.4.0
+  - accelerate>=0.25.0
+
+  # SAM2 requirements
+  - segment-anything>=1.0
+  - supervision>=0.16.0
+
+  # DWPose requirements
+  - onnxruntime>=1.16.0
+  - mediapipe>=0.10.0
+
+  # Additional utilities
+  - scipy>=1.10.0
+  - matplotlib>=3.7.0
+
+# Workflows to include
+workflows:
+  - wan-animate-example.json
+
+# Models required for WanVideo Animate
+models:
+  # WanVideo models - using optimized FP8 versions
+  wanvideo:
+    # Animate model (14B parameter version)
+    - name: wan22_i2v_a14b_high_fp8
+      url: https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/I2V/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors
+      filename: Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors
+
+    - name: wan22_i2v_a14b_low_fp8
+      url: https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/I2V/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors
+      filename: Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors
+
+    # Additional I2V models for flexibility
+    - name: wan21_i2v_480p_fp8
+      url: https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/I2V/Wan2_1-I2V-14B-480p_fp8_e4m3fn_scaled_KJ.safetensors
+      filename: Wan2_1-I2V-14B-480p_fp8_e4m3fn_scaled_KJ.safetensors
+
+    - name: wan21_i2v_720p_fp8
+      url: https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/I2V/Wan2_1-I2V-14B-720p_fp8_e4m3fn_scaled_KJ.safetensors
+      filename: Wan2_1-I2V-14B-720p_fp8_e4m3fn_scaled_KJ.safetensors
+
+  # VAE models - WanVideo uses its own VAE
+  vae:
+    - name: wan_vae
+      url: https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors
+      filename: wan_vae.safetensors
+
+  # CLIP Vision models for image encoding
+  clip_vision:
+    - name: clip_vision_h
+      url: https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors
+      filename: clip_vision_h.safetensors
+
+  # SAM2 models for segmentation
+  sam:
+    - name: sam2_hiera_base_plus
+      url: https://dl.fbaipublicfiles.com/segment_anything_2/072824/sam2_hiera_base_plus.pt
+      filename: sam2_hiera_base_plus.pt
+
+    - name: sam2_hiera_large
+      url: https://dl.fbaipublicfiles.com/segment_anything_2/072824/sam2_hiera_large.pt
+      filename: sam2_hiera_large.pt
+
+  # DWPose models for pose detection
+  dwpose:
+    - name: dw_ll_ucoco_384
+      url: https://huggingface.co/yzd-v/DWPose/resolve/main/dw-ll_ucoco_384.pth
+      filename: dw-ll_ucoco_384.pth
+
+    - name: yolox_l
+      url: https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.0/yolox_l.pth
+      filename: yolox_l.pth
+
+  # Text encoders (if needed for text conditioning)
+  text_encoders:
+    - name: t5_xxl
+      url: https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp16.safetensors
+      filename: t5xxl_fp16.safetensors
+
+# Environment variables
+env_vars:
+  CONFIG_NAME: wan-animate
+  DOWNLOAD_MODELS: "true"
+  AUTO_UPDATE: "false"
+  COMFYUI_ARGS: ""  # Will be auto-configured based on GPU
+  # WanVideo specific settings
+  WANVIDEO_CACHE_DIR: "/workspace/cache/wanvideo"
+  TORCH_COMPILE: "false"  # Can be enabled for faster inference

@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       variant:
-        description: 'Variant to build (base, sdxl-pony, flux, video, or all)'
+        description: 'Variant to build (base, sdxl-pony, flux, video, wan-animate, or all)'
         required: true
         default: 'all'
         type: choice
@@ -25,6 +25,7 @@ on:
           - sdxl-pony
           - flux
           - video
+          - wan-animate
           - all
       tag_name:
         description: 'Docker image tag (optional)'
@@ -35,36 +36,73 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  build-matrix:
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - name: Set build matrix
-        id: set-matrix
-        run: |
-          if [ "${{ github.event.inputs.variant }}" = "all" ] || [ -z "${{ github.event.inputs.variant }}" ]; then
-            echo "matrix={\"variant\":[\"base\",\"sdxl-pony\",\"flux\",\"video\"]}" >> $GITHUB_OUTPUT
-          else
-            echo "matrix={\"variant\":[\"${{ github.event.inputs.variant }}\"]}" >> $GITHUB_OUTPUT
-          fi
-
-  build:
-    needs: build-matrix
+  build-base:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-    strategy:
-      matrix: ${{fromJson(needs.build-matrix.outputs.matrix)}}
-      fail-fast: false
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
+    if: github.event.inputs.variant == 'all' || github.event.inputs.variant == 'base' || github.event.inputs.variant == ''
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/runpod-comfyui
+          flavor: |
+            latest=false
+          tags: |
+            type=raw,value=base
+            type=raw,value=base-{{sha}},enable=${{ github.ref != 'refs/heads/main' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push base Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./comfyui
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=base
+          cache-to: type=gha,mode=max,scope=base
+          build-args: |
+            CONFIG=base
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+            BUILDKIT_INLINE_CACHE=1
+
+  build-variants:
+    needs: build-base
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        variant: [flux, sdxl-pony, video, wan-animate]
+      fail-fast: false
+    if: github.event.inputs.variant == 'all' || contains('flux,sdxl-pony,video,wan-animate', github.event.inputs.variant) || github.event.inputs.variant == ''
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -87,12 +125,12 @@ jobs:
           tags: |
             type=raw,value=${{ matrix.variant }}
             type=raw,value=${{ matrix.variant }}-{{sha}},enable=${{ github.ref != 'refs/heads/main' }}
-            type=raw,value=latest,enable=${{ matrix.variant == 'base' && github.ref == 'refs/heads/main' }}
 
-      - name: Build and push Docker image
+      - name: Build and push variant Docker image
         uses: docker/build-push-action@v5
         with:
           context: ./comfyui
+          file: ./comfyui/Dockerfile.variant
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
@@ -100,6 +138,7 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.variant }}
           cache-to: type=gha,mode=max,scope=${{ matrix.variant }}
           build-args: |
+            BASE_IMAGE=${{ env.REGISTRY }}/${{ github.repository_owner }}/runpod-comfyui:base
             CONFIG=${{ matrix.variant }}
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             VCS_REF=${{ github.sha }}

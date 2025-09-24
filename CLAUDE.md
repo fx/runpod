@@ -56,6 +56,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Provide clear error information and available alternatives
 - Check GPU availability and suggest options
 
+## ⚠️ DOCKER BASE IMAGE RULES ⚠️
+
+### NVIDIA CUDA Images
+**ONLY use official NVIDIA images from NGC catalog:**
+- Source: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda
+- Format: `nvcr.io/nvidia/cuda:VERSION-cudnn-runtime-ubuntu22.04`
+- Example: `nvcr.io/nvidia/cuda:12.9.1-cudnn-runtime-ubuntu22.04`
+- NEVER use outdated CUDA versions (minimum 12.9 for modern GPUs)
+- NEVER use Docker Hub nvidia/cuda images
+
 ## Project Overview
 
 This repository contains Docker templates for deploying various AI applications on RunPod. Each subdirectory contains a complete Docker setup optimized for RunPod deployment.

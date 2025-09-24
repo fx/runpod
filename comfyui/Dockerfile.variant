@@ -1,0 +1,21 @@
+# Build variant images from base
+ARG BASE_IMAGE=ghcr.io/effekt/runpod-comfyui:base
+FROM ${BASE_IMAGE}
+
+# Build arguments
+ARG CONFIG=flux
+ARG BUILD_DATE
+ARG VCS_REF
+
+# Labels for metadata
+LABEL org.label-schema.build-date=$BUILD_DATE \
+      org.label-schema.vcs-ref=$VCS_REF \
+      org.label-schema.name="ComfyUI ${CONFIG}" \
+      org.label-schema.description="ComfyUI ${CONFIG} variant built on base image" \
+      org.label-schema.vendor="effekt"
+
+# The base image already has everything installed, just update the config
+ENV CONFIG_NAME=${CONFIG}
+
+# Variant-specific setup will happen at runtime via entrypoint.sh
+# The builder.py will handle downloading models and nodes based on CONFIG_NAME

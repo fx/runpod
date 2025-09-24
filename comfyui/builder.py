@@ -21,7 +21,7 @@ try:
     from config_loader_hiyapyco import ConfigLoader
 except ImportError:
     # Fallback to simple loader if HiYaPyCo is not available
-    logger.warning("HiYaPyCo not available, using simple config loader")
+    print("Warning: HiYaPyCo not available, using simple config loader", file=sys.stderr)
     from config_loader_simple import ConfigLoader
 from model_manager import ModelManager
 from node_installer import NodeInstaller

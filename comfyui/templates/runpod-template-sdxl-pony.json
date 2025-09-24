@@ -1,6 +1,6 @@
 {
   "name": "ComfyUI Sdxl-pony Edition",
-  "imageName": "ghcr.io/effekt/runpod-comfyui:sdxl-pony",
+  "imageName": "ghcr.io/fx/runpod-comfyui:sdxl-pony",
   "description": "ComfyUI pre-configured for sdxl-pony models with optimized settings.",
   "volumeInGb": 50,
   "containerDiskInGb": 20,

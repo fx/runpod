@@ -38,13 +38,13 @@ install_python_packages() {
         echo -e "${GREEN}PyTorch and torchvision are already installed${NC}"
     else
         echo -e "${YELLOW}Installing PyTorch with CUDA support...${NC}"
-        pip install --no-cache-dir torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cu124
+        pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu129
     fi
 
     # Ensure xformers is installed
     if ! python -c "import xformers" 2>/dev/null; then
         echo -e "${YELLOW}Installing xformers...${NC}"
-        pip install --no-cache-dir xformers --index-url https://download.pytorch.org/whl/cu124
+        pip install --no-cache-dir xformers --index-url https://download.pytorch.org/whl/cu129
     fi
 
     # Install ComfyUI requirements if not already installed
@@ -55,6 +55,8 @@ install_python_packages() {
 
         # Install additional packages
         echo -e "${YELLOW}Installing additional packages...${NC}"
+        # Install builder requirements
+        pip install --no-cache-dir -r /workspace/requirements-builder.txt
         # Install additional packages that might not be in requirements.txt
         pip install --no-cache-dir \
             opencv-python-headless \

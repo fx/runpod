@@ -69,13 +69,16 @@ class ModelManager:
             logger.error(f"No URL specified for model: {name}")
             return False
 
+        # Debug logging
+        logger.debug(f"Model config for {name}: {model_config}")
+
         # Create subfolder if specified
         if subfolder:
             output_dir = output_dir / subfolder
             output_dir.mkdir(parents=True, exist_ok=True)
-            logger.info(f"Downloading model: {name} to subfolder: {subfolder}")
+            logger.info(f"Downloading model: {name} to subfolder: {output_dir}")
         else:
-            logger.info(f"Downloading model: {name}")
+            logger.info(f"Downloading model: {name} to directory: {output_dir}")
 
         # Determine download method based on URL format
         if url.startswith('civitai:'):

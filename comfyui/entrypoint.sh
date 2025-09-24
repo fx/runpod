@@ -38,13 +38,13 @@ install_python_packages() {
         echo -e "${GREEN}PyTorch and torchvision are already installed${NC}"
     else
         echo -e "${YELLOW}Installing PyTorch with CUDA support...${NC}"
-        pip install --no-cache-dir torch==2.2.0 torchvision==0.17.0 torchaudio==2.2.0 --index-url https://download.pytorch.org/whl/cu121
+        pip install --no-cache-dir torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cu124
     fi
 
     # Ensure xformers is installed
     if ! python -c "import xformers" 2>/dev/null; then
         echo -e "${YELLOW}Installing xformers...${NC}"
-        pip install --no-cache-dir xformers==0.0.24 --index-url https://download.pytorch.org/whl/cu121
+        pip install --no-cache-dir xformers --index-url https://download.pytorch.org/whl/cu124
     fi
 
     # Install ComfyUI requirements if not already installed

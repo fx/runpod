@@ -54,8 +54,8 @@ class ComfyUIBuilder:
     def load_yaml(self, path: Path) -> Dict:
         """Load a YAML configuration file."""
         # Use the config loader for files in the configs directory
-        if path.parent == self.configs_dir and path.name.startswith('config-'):
-            config_name = path.stem.replace('config-', '')
+        if path.parent == self.configs_dir and path.suffix == '.yaml':
+            config_name = path.stem
             return self.config_loader.load_config(config_name)
         else:
             # Fallback to regular YAML loading for other files
@@ -71,15 +71,15 @@ class ComfyUIBuilder:
     def list_configs(self) -> List[str]:
         """List all available configurations."""
         configs = []
-        for f in self.configs_dir.glob('config-*.yaml'):
-            config_name = f.stem.replace('config-', '')
+        for f in self.configs_dir.glob('*.yaml'):
+            config_name = f.stem
             configs.append(config_name)
         return sorted(configs)
 
     def validate_config(self, config_name: str) -> bool:
         """Validate a configuration."""
         try:
-            config_path = self.configs_dir / f'config-{config_name}.yaml'
+            config_path = self.configs_dir / f'{config_name}.yaml'
             if not config_path.exists():
                 logger.error(f"Config not found: {config_name}")
                 return False
@@ -141,7 +141,7 @@ class ComfyUIBuilder:
     def install_nodes(self, config_name: str) -> bool:
         """Install custom nodes from configuration."""
         try:
-            config_path = self.configs_dir / f'config-{config_name}.yaml'
+            config_path = self.configs_dir / f'{config_name}.yaml'
             if not config_path.exists():
                 logger.error(f"Config not found: {config_name}")
                 return False
@@ -177,7 +177,7 @@ class ComfyUIBuilder:
     def download_models(self, config_name: str, output_dir: Optional[Path] = None) -> bool:
         """Download models for a configuration."""
         try:
-            config_path = self.configs_dir / f'config-{config_name}.yaml'
+            config_path = self.configs_dir / f'{config_name}.yaml'
             if not config_path.exists():
                 logger.error(f"Config not found: {config_name}")
                 return False
@@ -209,7 +209,7 @@ class ComfyUIBuilder:
 
     def create_config(self, name: str, base_image: str = 'effekt/runpod-comfyui:base') -> bool:
         """Create a new configuration."""
-        config_path = self.configs_dir / f'config-{name}.yaml'
+        config_path = self.configs_dir / f'{name}.yaml'
 
         if config_path.exists():
             logger.error(f"Config already exists: {name}")
@@ -220,7 +220,7 @@ class ComfyUIBuilder:
             'version': '1.0.0',
             'base_image': base_image,
             'description': f'ComfyUI configuration: {name}',
-            'extends': 'config-base.yaml',  # Inherit from base by default
+            'extends': 'base.yaml',  # Inherit from base by default
             'nodes': [
                 '!include base',  # Include all base nodes
                 # Add custom nodes here
@@ -326,8 +326,8 @@ def main():
     elif args.command == 'install-nodes':
         # Parse config file path to get config name
         config_path = Path(args.config)
-        if config_path.name.startswith('config-') and config_path.name.endswith('.yaml'):
-            config_name = config_path.name[7:-5]  # Remove 'config-' and '.yaml'
+        if config_path.suffix == '.yaml':
+            config_name = config_path.stem
         else:
             config_name = config_path.stem
         success = builder.install_nodes(config_name)
@@ -336,8 +336,8 @@ def main():
     elif args.command == 'download':
         # Parse config file path to get config name
         config_path = Path(args.config)
-        if config_path.name.startswith('config-') and config_path.name.endswith('.yaml'):
-            config_name = config_path.name[7:-5]  # Remove 'config-' and '.yaml'
+        if config_path.suffix == '.yaml':
+            config_name = config_path.stem
         else:
             config_name = config_path.stem
         success = builder.download_models(config_name, args.output)

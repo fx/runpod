@@ -104,10 +104,7 @@ load_config() {
         return 1
     fi
 
-    # Export the config file path for later use
-    export COMFYUI_CONFIG_FILE="$config_file"
-
-    # Parse YAML and export environment variables
+    # Parse YAML and export environment variables (including COMFYUI_CONFIG_FILE)
     python3 -c "
 import sys
 import os
@@ -143,12 +140,20 @@ except (ImportError, ModuleNotFoundError) as e:
         config = yaml.safe_load(f)
 
 # Export environment variables from config
+# IMPORTANT: Don't override variables that are already set (from RunPod template)
 env_vars = config.get('env_vars', {})
 for key, value in env_vars.items():
-    print(f'export {key}=\"{value}\"')
+    # Only export if not already set in environment
+    if key not in os.environ:
+        print(f'export {key}=\"{value}\"')
+    else:
+        print(f'# Keeping existing {key}={os.environ[key]} (not overriding with {value})')
 
-# Store config name
+# Store config name (always export this)
 print(f\"export CONFIG_NAME={config.get('name', 'custom')}\")
+
+# Always export the config file path for builder.py
+print(f'export COMFYUI_CONFIG_FILE=\"{sys.argv[1]}\"')
 " "$config_file" > /tmp/config_env.sh
 
     if [ -f "/tmp/config_env.sh" ]; then
@@ -170,18 +175,24 @@ fi
 
 # Load configuration from various sources
 # Priority: 1. COMFYUI_CONFIG_URL, 2. COMFYUI_CONFIG_FILE, 3. CONFIG_NAME, 4. Pre-baked config, 5. Base config
+CONFIG_LOADED=false
 if [ ! -z "$COMFYUI_CONFIG_URL" ]; then
-    load_config "$COMFYUI_CONFIG_URL"
+    load_config "$COMFYUI_CONFIG_URL" && CONFIG_LOADED=true
 elif [ ! -z "$COMFYUI_CONFIG_FILE" ]; then
-    load_config "$COMFYUI_CONFIG_FILE"
+    load_config "$COMFYUI_CONFIG_FILE" && CONFIG_LOADED=true
 elif [ ! -z "$CONFIG_NAME" ]; then
-    load_config "$CONFIG_NAME"
+    echo -e "${YELLOW}Loading config: $CONFIG_NAME${NC}"
+    load_config "$CONFIG_NAME" && CONFIG_LOADED=true
 elif [ -f "/workspace/config.yaml" ]; then
     # Pre-baked config
-    load_config "/workspace/config.yaml"
+    load_config "/workspace/config.yaml" && CONFIG_LOADED=true
 else
     # Default to base config
-    load_config "base"
+    load_config "base" && CONFIG_LOADED=true
+fi
+
+if [ "$CONFIG_LOADED" = false ]; then
+    echo -e "${RED}Warning: Failed to load configuration, continuing with defaults${NC}"
 fi
 
 # Install Python packages on first run or if requested
@@ -268,10 +279,15 @@ fi
 
 # Apply configuration using builder tool
 if [ ! -z "$COMFYUI_CONFIG_FILE" ]; then
-    echo -e "${YELLOW}Applying configuration...${NC}"
+    echo -e "${YELLOW}Applying configuration from: $COMFYUI_CONFIG_FILE${NC}"
+
+    # Debug: Show environment
+    echo -e "${YELLOW}DOWNLOAD_MODELS=$DOWNLOAD_MODELS${NC}"
+    echo -e "${YELLOW}INSTALL_NODES=$INSTALL_NODES${NC}"
 
     # Install nodes from config
     if [ "$INSTALL_NODES" != "false" ]; then
+        echo -e "${YELLOW}Installing nodes from config...${NC}"
         python /workspace/builder.py install-nodes --config "$COMFYUI_CONFIG_FILE" || {
             echo -e "${RED}Warning: Some nodes failed to install${NC}"
         }
@@ -279,10 +295,14 @@ if [ ! -z "$COMFYUI_CONFIG_FILE" ]; then
 
     # Download models if requested
     if [ "$DOWNLOAD_MODELS" = "true" ]; then
+        echo -e "${YELLOW}Downloading models from config...${NC}"
         python /workspace/builder.py download --config "$COMFYUI_CONFIG_FILE" || {
             echo -e "${RED}Warning: Some models failed to download${NC}"
         }
     fi
+else
+    echo -e "${YELLOW}No configuration file to apply (COMFYUI_CONFIG_FILE not set)${NC}"
+    echo -e "${YELLOW}DOWNLOAD_MODELS=$DOWNLOAD_MODELS but no config file to process${NC}"
 fi
 
 # Auto-update ComfyUI if requested
@@ -337,6 +357,6 @@ FINAL_ARGS="$COMFYUI_GPU_FLAGS $PREVIEW_FLAGS $COMFYUI_ARGS $COMFYUI_CONFIG_ARGS
 # Change to ComfyUI directory
 cd /workspace/ComfyUI
 
-# Start ComfyUI
+# Start ComfyUI (explicitly use venv Python)
 echo -e "${GREEN}Starting ComfyUI with args: $FINAL_ARGS${NC}"
-exec python main.py --listen 0.0.0.0 --port 8188 --disable-auto-launch $FINAL_ARGS
+exec /opt/venv/bin/python main.py --listen 0.0.0.0 --port 8188 --disable-auto-launch $FINAL_ARGS

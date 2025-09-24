@@ -30,7 +30,7 @@ class ConfigLoader:
         """Load a configuration with inheritance support.
 
         Args:
-            config_name: Name of the configuration (without 'config-' prefix and '.yaml' suffix)
+            config_name: Name of the configuration (without '.yaml' suffix)
 
         Returns:
             Loaded and merged configuration
@@ -38,7 +38,7 @@ class ConfigLoader:
         if config_name in self._cache:
             return self._cache[config_name]
 
-        config_path = self.config_dir / f'config-{config_name}.yaml'
+        config_path = self.config_dir / f'{config_name}.yaml'
 
         if not config_path.exists():
             raise FileNotFoundError(f"Config not found: {config_name}")
@@ -52,13 +52,12 @@ class ConfigLoader:
 
         if 'extends' in temp_config:
             base_name = temp_config['extends']
-            if base_name.startswith('config-'):
-                base_name = base_name[7:]
+            # Remove .yaml extension if present
             if base_name.endswith('.yaml'):
                 base_name = base_name[:-5]
 
             # Add base config file path
-            base_path = self.config_dir / f'config-{base_name}.yaml'
+            base_path = self.config_dir / f'{base_name}.yaml'
             if base_path.exists():
                 config_files.append(str(base_path))
 
@@ -97,7 +96,7 @@ class ConfigLoader:
         """
         configs = []
         for name in config_names:
-            config_path = self.config_dir / f'config-{name}.yaml'
+            config_path = self.config_dir / f'{name}.yaml'
             if config_path.exists():
                 configs.append(str(config_path))
 

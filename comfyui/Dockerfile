@@ -52,9 +52,10 @@ RUN git config --global url."https://github.com/".insteadOf git@github.com: && \
 RUN python3.11 -m venv $VENV_PATH
 ENV PATH="$VENV_PATH/bin:$PATH"
 
-# Install only essential Python packages needed for setup
+# Install essential Python packages and numpy FIRST (before PyTorch)
 RUN pip install --upgrade --no-cache-dir pip setuptools wheel && \
     pip install --no-cache-dir \
+    numpy>=1.25.0 \
     pyyaml \
     hiyapyco \
     requests \
@@ -62,25 +63,23 @@ RUN pip install --upgrade --no-cache-dir pip setuptools wheel && \
     psutil \
     "huggingface-hub[cli]"
 
-# Install PyTorch with CUDA support and torchvision in the base image
-# This ensures torchvision's C++ extensions (like NMS) are properly compiled
+# Install PyTorch with CUDA support (after numpy is installed)
 RUN pip install --no-cache-dir \
     torch==2.2.0 \
     torchvision==0.17.0 \
     torchaudio==2.2.0 \
     --index-url https://download.pytorch.org/whl/cu121
 
-# Install essential dependencies that ComfyUI needs
-RUN pip install --no-cache-dir \
-    numpy>=1.24.0 \
-    pillow>=10.0.0 \
-    scipy>=1.11.0
-
 # Install xformers for memory efficiency
 RUN pip install --no-cache-dir xformers==0.0.24 --index-url https://download.pytorch.org/whl/cu121
 
 # Clone ComfyUI (shallow clone to save space)
 RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git $COMFYUI_PATH
+
+# Install ComfyUI's requirements (excluding torch/torchvision/torchaudio since we installed specific versions)
+RUN cd $COMFYUI_PATH && \
+    grep -v "^torch\|^torchvision\|^torchaudio" requirements.txt | \
+    pip install --no-cache-dir -r /dev/stdin
 
 # Install ComfyUI Manager (essential for UI)
 RUN cd $COMFYUI_PATH/custom_nodes && \

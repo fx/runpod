@@ -2,7 +2,7 @@ name: sdxl-pony
 version: 1.0.0
 base_image: effekt/runpod-comfyui:base
 description: Complete SDXL and Pony Diffusion setup with all essential nodes
-extends: config-base.yaml  # Inherit from base configuration
+extends: base.yaml  # Inherit from base configuration
 
 # Additional SDXL/Pony-specific nodes (will be merged with base)
 nodes:

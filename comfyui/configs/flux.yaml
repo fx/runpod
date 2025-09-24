@@ -2,7 +2,7 @@ name: flux
 version: 1.0.0
 base_image: effekt/runpod-comfyui:base
 description: FLUX model support with both Schnell and Dev variants
-extends: config-base.yaml  # Reference to base config
+extends: base.yaml  # Reference to base config
 
 # Additional flux-specific nodes (will be merged with base)
 nodes:

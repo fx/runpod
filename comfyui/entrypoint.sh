@@ -93,9 +93,9 @@ load_config() {
     elif [ -f "$config_source" ]; then
         # Use local file
         config_file="$config_source"
-    elif [ -f "/workspace/configs/config-${config_source}.yaml" ]; then
-        # Try config-name.yaml format
-        config_file="/workspace/configs/config-${config_source}.yaml"
+    elif [ -f "/workspace/configs/${config_source}.yaml" ]; then
+        # Try name.yaml format
+        config_file="/workspace/configs/${config_source}.yaml"
     elif [ -f "/workspace/${config_source}" ]; then
         # Try in workspace
         config_file="/workspace/${config_source}"
@@ -127,9 +127,9 @@ try:
     config_path = Path(sys.argv[1])
 
     # If it's a config in the configs directory, use the loader
-    if 'config-' in config_path.name and config_path.suffix == '.yaml':
+    if config_path.suffix == '.yaml':
         loader = ConfigLoader(config_path.parent)
-        config_name = config_path.stem.replace('config-', '')
+        config_name = config_path.stem
         config = loader.load_config(config_name)
     else:
         # Fallback to regular YAML loading

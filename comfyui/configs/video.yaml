@@ -2,7 +2,7 @@ name: video
 version: 1.0.0
 base_image: effekt/runpod-comfyui:base
 description: Complete video generation setup with WanVideo and AnimateDiff
-extends: config-base.yaml  # Inherit from base configuration
+extends: base.yaml  # Inherit from base configuration
 
 # Additional video-specific nodes (will be merged with base)
 nodes:

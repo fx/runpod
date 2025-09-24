@@ -86,32 +86,13 @@ RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git $COMFYUI_P
 RUN cd $COMFYUI_PATH/custom_nodes && \
     git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager.git
 
-# Create necessary directories
-RUN mkdir -p $COMFYUI_PATH/models/checkpoints \
-    $COMFYUI_PATH/models/clip \
-    $COMFYUI_PATH/models/clip_vision \
-    $COMFYUI_PATH/models/controlnet \
-    $COMFYUI_PATH/models/diffusers \
-    $COMFYUI_PATH/models/embeddings \
-    $COMFYUI_PATH/models/gligen \
-    $COMFYUI_PATH/models/hypernetworks \
-    $COMFYUI_PATH/models/loras \
-    $COMFYUI_PATH/models/style_models \
-    $COMFYUI_PATH/models/unet \
-    $COMFYUI_PATH/models/upscale_models \
-    $COMFYUI_PATH/models/vae \
-    $COMFYUI_PATH/models/vae_approx \
-    $COMFYUI_PATH/output \
-    $COMFYUI_PATH/input \
-    $COMFYUI_PATH/temp \
-    /workspace/storage \
-    /workspace/venv-cache
+# ComfyUI will create directories as needed when downloading models
 
 # Copy scripts and configs
 COPY entrypoint.sh /workspace/entrypoint.sh
 COPY builder.py /workspace/builder.py
 COPY requirements-builder.txt /workspace/requirements-builder.txt
-COPY config-*.yaml /workspace/configs/
+COPY configs/ /workspace/configs/
 COPY lib/ /workspace/lib/
 
 # Make scripts executable

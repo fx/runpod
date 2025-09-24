@@ -4,10 +4,11 @@ A production-ready Docker template for deploying ComfyUI on RunPod with CUDA sup
 
 ## Features
 
-- 🚀 **CUDA 12.1** with PyTorch 2.2.0 for optimal GPU performance
+- 🚀 **CUDA 12.4** with PyTorch 2.6.0 for optimal GPU performance (RTX 5090 compatible)
 - 🎨 **ComfyUI** with latest updates and ComfyUI Manager pre-installed
 - 📦 **Popular custom nodes** pre-configured
 - 💾 **Persistent storage** support for models and outputs
+- 📂 **Organized model storage** with automatic subfolder organization by base model type
 - 🌐 **Web UI** accessible on port 8188
 - 🔧 **Customizable** via environment variables
 - 🐳 **Docker Compose** support for local testing
@@ -68,17 +69,40 @@ docker-compose up -d
 ```
 /workspace/
 ├── ComfyUI/
-│   ├── models/           # AI models (checkpoints, VAE, LoRA, etc.)
-│   │   ├── checkpoints/  # Stable Diffusion models
-│   │   ├── vae/          # VAE models
-│   │   ├── loras/        # LoRA models
-│   │   └── ...
-│   ├── output/           # Generated images
-│   ├── input/            # Input images for processing
-│   ├── custom_nodes/     # ComfyUI extensions
-│   └── workflows/        # Saved ComfyUI workflows
-└── storage/              # Additional persistent storage
+│   ├── models/                    # AI models organized by type and base model
+│   │   ├── checkpoints/           # Traditional checkpoint models
+│   │   │   ├── sd15/             # SD 1.5 models
+│   │   │   ├── sdxl/             # SDXL models
+│   │   │   ├── pony/             # Pony Diffusion models
+│   │   │   └── anime/            # Anime-style models
+│   │   ├── diffusion_models/      # Modern diffusion models
+│   │   │   ├── flux/             # FLUX models
+│   │   │   ├── sd3/              # Stable Diffusion 3
+│   │   │   └── pixart/           # PixArt models
+│   │   ├── loras/                 # LoRA adapters
+│   │   │   ├── flux/             # FLUX LoRAs
+│   │   │   ├── sd15/             # SD 1.5 LoRAs
+│   │   │   ├── sdxl/             # SDXL LoRAs
+│   │   │   └── pony/             # Pony LoRAs
+│   │   ├── vae/                   # VAE models
+│   │   │   ├── sd15/             # SD 1.5 VAEs
+│   │   │   ├── sdxl/             # SDXL VAEs
+│   │   │   └── flux/             # FLUX VAEs
+│   │   ├── controlnet/            # ControlNet models
+│   │   │   ├── sd15/             # SD 1.5 ControlNets
+│   │   │   ├── sdxl/             # SDXL ControlNets
+│   │   │   └── flux/             # FLUX ControlNets
+│   │   └── ...                    # Other model types
+│   ├── output/                    # Generated images
+│   ├── input/                     # Input images for processing
+│   ├── custom_nodes/              # ComfyUI extensions
+│   └── workflows/                 # Saved ComfyUI workflows
+└── storage/                       # Additional persistent storage
 ```
+
+### Model Organization
+
+Models are automatically organized into subfolders based on their base model type for better management. When downloading models through the builder tool or configs, they will be placed in the appropriate subfolder. This helps keep different model architectures separated and makes it easier to manage large model collections.
 
 ## Environment Variables
 

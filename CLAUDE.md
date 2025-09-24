@@ -243,6 +243,45 @@ Configs are in `comfyui/configs/`:
 
 **Example:** FLUX models MUST use `diffusion_models:`, NOT `checkpoints:`
 
+### Model Organization (Subfolders)
+Models are organized into subfolders by base model type for better management:
+
+```
+/models/
+├── diffusion_models/
+│   ├── flux/           # FLUX models
+│   ├── sd3/            # Stable Diffusion 3
+│   └── pixart/         # PixArt models
+├── checkpoints/
+│   ├── sd15/           # SD 1.5 models
+│   ├── sdxl/           # SDXL models
+│   ├── pony/           # Pony Diffusion models
+│   └── anime/          # Anime-style models
+├── loras/
+│   ├── flux/           # FLUX LoRAs
+│   ├── sd15/           # SD 1.5 LoRAs
+│   ├── sdxl/           # SDXL LoRAs
+│   └── pony/           # Pony LoRAs
+├── controlnet/
+│   ├── sd15/           # SD 1.5 ControlNets
+│   ├── sdxl/           # SDXL ControlNets
+│   └── flux/           # FLUX ControlNets
+└── vae/
+    ├── sd15/           # SD 1.5 VAEs
+    ├── sdxl/           # SDXL VAEs
+    └── flux/           # FLUX VAEs
+```
+
+**In configs:** Use the `subfolder` field to organize models:
+```yaml
+models:
+  diffusion_models:
+    - name: flux1-schnell
+      url: https://huggingface.co/...
+      filename: flux1-schnell.safetensors
+      subfolder: flux  # Will go to /models/diffusion_models/flux/
+```
+
 ## Environment Variables
 
 Key variables for templates:

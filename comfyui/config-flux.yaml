@@ -37,7 +37,7 @@ workflows:
 
 # Models to download
 models:
-  checkpoints:
+  diffusion_models:
     - name: flux1-schnell
       url: https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/flux1-schnell.safetensors
       filename: flux1-schnell.safetensors

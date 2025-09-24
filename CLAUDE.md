@@ -481,6 +481,21 @@ The system uses YAML configurations to define everything about a ComfyUI setup:
 - **Workflows**: Pre-built ComfyUI workflows to include
 - **Environment Variables**: Runtime settings
 
+#### Model Types and Directory Structure
+
+**CRITICAL**: Use the correct model type in configurations to ensure models are placed in the right directories:
+
+- **`checkpoints`**: Traditional SD models (SD1.5, SDXL, etc.) → `/workspace/ComfyUI/models/checkpoints/`
+- **`diffusion_models`**: FLUX and modern diffusion models → `/workspace/ComfyUI/models/diffusion_models/`
+- **`vae`**: VAE models → `/workspace/ComfyUI/models/vae/`
+- **`clip`**: Text encoders → `/workspace/ComfyUI/models/clip/`
+- **`loras`**: LoRA adapters → `/workspace/ComfyUI/models/loras/`
+- **`upscale_models`**: Upscalers → `/workspace/ComfyUI/models/upscale_models/`
+
+Examples:
+- FLUX models go in `diffusion_models:` NOT `checkpoints:`
+- SD1.5/SDXL models go in `checkpoints:` NOT `diffusion_models:`
+
 **IMPORTANT**: Nothing that can be defined in config files should be hardcoded in entrypoint.sh or Python scripts. All defaults belong in `config-base.yaml`.
 
 ### Startup Flow

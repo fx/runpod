@@ -74,12 +74,12 @@ This repository contains Docker templates for deploying various AI applications 
 cd comfyui/
 
 # Build specific variant
-docker build -t effekt/runpod-comfyui:base .
-docker build -t effekt/runpod-comfyui:flux --build-arg CONFIG=flux .
+docker build -t ghcr.io/effekt/runpod-comfyui:base .
+docker build -t ghcr.io/effekt/runpod-comfyui:flux --build-arg CONFIG=flux .
 
 # Push to Docker Hub
-docker push effekt/runpod-comfyui:base
-docker push effekt/runpod-comfyui:flux
+docker push ghcr.io/effekt/runpod-comfyui:base
+docker push ghcr.io/effekt/runpod-comfyui:flux
 ```
 
 ### Step 2: Create/Update Templates
@@ -303,7 +303,7 @@ Based on GPU VRAM:
 
 ```bash
 # Build and push Docker image
-cd comfyui && docker build -t effekt/runpod-comfyui:flux --build-arg CONFIG=flux . && docker push effekt/runpod-comfyui:flux
+cd comfyui && docker build -t ghcr.io/effekt/runpod-comfyui:flux --build-arg CONFIG=flux . && docker push ghcr.io/effekt/runpod-comfyui:flux
 
 # Update templates
 cd comfyui/templates && ./manage-templates.sh update-all

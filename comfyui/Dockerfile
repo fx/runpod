@@ -1,5 +1,5 @@
-# Minimal base image with CUDA support (12.4 to match PyTorch)
-FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04 AS base
+# Minimal base image with CUDA support (12.4 for RTX 5090)
+FROM nvcr.io/nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04 AS base
 
 # Build arguments
 ARG BUILD_DATE

@@ -10,7 +10,7 @@ A powerful and modular Stable Diffusion GUI with a graph/nodes interface.
 - **Features**: CUDA 12.1, PyTorch 2.2.0, ComfyUI Manager, popular custom nodes
 - **Use Case**: AI image generation with Stable Diffusion, SDXL, and Flux models
 - **GPU Requirements**: Minimum 8GB VRAM (12GB+ recommended)
-- **Docker Image**: `effekt/runpod-comfyui:latest`
+- **Docker Image**: `ghcr.io/effekt/runpod-comfyui:latest`
 
 ## 📖 Repository Structure
 
@@ -53,10 +53,10 @@ runpod/
 cd comfyui/
 
 # Build Docker image
-docker build -t effekt/runpod-comfyui:latest .
+docker build -t ghcr.io/effekt/runpod-comfyui:latest .
 
 # Push to Docker Hub
-docker push effekt/runpod-comfyui:latest
+docker push ghcr.io/effekt/runpod-comfyui:latest
 
 # Use runpod-template.json to create template on RunPod Dashboard
 ```

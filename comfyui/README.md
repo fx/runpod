@@ -20,10 +20,10 @@ A production-ready Docker template for deploying ComfyUI on RunPod with CUDA sup
 1. Build and push the Docker image to Docker Hub:
 ```bash
 # Build the image
-docker build -t effekt/runpod-comfyui:latest .
+docker build -t ghcr.io/effekt/runpod-comfyui:latest .
 
 # Push to Docker Hub
-docker push effekt/runpod-comfyui:latest
+docker push ghcr.io/effekt/runpod-comfyui:latest
 ```
 
 2. Create a RunPod template:
@@ -215,10 +215,10 @@ RUN wget -O /workspace/ComfyUI/models/checkpoints/your-model.safetensors \
 
 ```bash
 # Build with custom tag
-docker build -t effekt/runpod-comfyui-custom:latest .
+docker build -t ghcr.io/effekt/runpod-comfyui-custom:latest .
 
 # Push to registry
-docker push effekt/runpod-comfyui-custom:latest
+docker push ghcr.io/effekt/runpod-comfyui-custom:latest
 ```
 
 ## GitHub Actions Workflow

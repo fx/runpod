@@ -1,6 +1,6 @@
 {
   "name": "ComfyUI Flux Edition",
-  "imageName": "effekt/runpod-comfyui:flux",
+  "imageName": "ghcr.io/effekt/runpod-comfyui:flux",
   "description": "ComfyUI pre-configured for flux models with optimized settings.",
   "volumeInGb": 50,
   "containerDiskInGb": 20,

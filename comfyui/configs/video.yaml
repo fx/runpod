@@ -22,6 +22,14 @@ nodes:
     description: SUPIR upscaling for animations
   - url: https://github.com/ltdrdata/ComfyUI-Inspire-Pack
     description: Inspire Pack utilities
+  - url: https://github.com/kijai/ComfyUI-WanVideoWrapper
+    description: WanVideo wrapper for Wan2.2-Animate models
+  - url: https://github.com/storyicon/comfyui_segment_anything
+    description: SAM2 segmentation for video masking
+  - url: https://github.com/cubiq/ComfyUI_essentials
+    description: Essential utilities for image processing
+  - url: https://github.com/Fannovel16/comfyui_controlnet_aux
+    description: ControlNet auxiliary preprocessors
 
 # Additional Python requirements (will be merged with base)
 requirements:
@@ -35,6 +43,10 @@ requirements:
   - omegaconf>=2.3.0
   - tensorboard>=2.15.0
   - scikit-image>=0.21.0
+  - segment-anything>=1.0
+  - supervision>=0.16.0
+  - yolox>=0.3.0
+  - triton>=2.1.0  # For speed optimization with WanVideo
 
 # Workflows to include
 workflows:
@@ -42,6 +54,8 @@ workflows:
   - wan-video-img2vid.json
   - wan-video-vid2vid.json
   - wan-video-interpolation.json
+  - wan-animate-example.json
+  - wan22-i2v-a14b-example.json
   - animate-txt2anim.json
   - animate-img2anim.json
   - animate-motion-transfer.json
@@ -124,6 +138,48 @@ models:
       url: https://huggingface.co/guoyww/animatediff/resolve/main/v2_lora_ZoomOut.ckpt
       filename: v2_lora_zoom_out.ckpt
       subfolder: sd15
+  # WanVideo models
+  wanvideo:
+    - name: wan22_animate_14b
+      url: https://huggingface.co/Wan-AI/Wan2.2-Animate-14B/resolve/main/Wan2_2_Animate_14B_bf16.safetensors
+      filename: Wan2_2_Animate_14B_bf16.safetensors
+    - name: wan22_i2v_a14b_high_fp8
+      url: https://huggingface.co/kijai/WanVideo_pruned/resolve/main/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors
+      filename: Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors
+    - name: wan22_i2v_a14b_low_fp8
+      url: https://huggingface.co/kijai/WanVideo_pruned/resolve/main/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors
+      filename: Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors
+    - name: wan21_vae
+      url: https://huggingface.co/Wan-AI/WanVideo/resolve/main/Wan2_1_VAE_bf16.safetensors
+      filename: Wan2_1_VAE_bf16.safetensors
+    - name: lightx2v_i2v_14b_lora
+      url: https://huggingface.co/kijai/WanVideo_pruned/resolve/main/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors
+      filename: lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors
+  # CLIP Vision models
+  clip_vision:
+    - name: clip_vision_h
+      url: https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors
+      filename: clip_vision_h.safetensors
+  # SAM2 models for segmentation
+  sam:
+    - name: sam2_hiera_base_plus
+      url: https://dl.fbaipublicfiles.com/segment_anything_2/072824/sam2_hiera_base_plus.pt
+      filename: sam2_hiera_base_plus.safetensors
+  # YOLOX models for detection
+  yolox:
+    - name: yolox_l
+      url: https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.0/yolox_l.pth
+      filename: yolox_l.torchscript.pt
+  # DWPose preprocessor models
+  dwpose:
+    - name: dw_ll_ucoco_384
+      url: https://huggingface.co/yzd-v/DWPose/resolve/main/dw-ll_ucoco_384.pth
+      filename: dw-ll_ucoco_384_bs5.torchscript.pt
+  # T5 Text encoders
+  text_encoders:
+    - name: umt5_xxl_fp16
+      url: https://huggingface.co/mcmonkey/google_umt5-xxl_encoderonly_fp16/resolve/main/umt5_xxl_fp16.safetensors
+      filename: umt5_xxl_fp16.safetensors
 
 # Environment variables (override base)
 env_vars:

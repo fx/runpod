@@ -70,6 +70,12 @@ RUN pip install --no-cache-dir \
     torchaudio==2.2.0 \
     --index-url https://download.pytorch.org/whl/cu121
 
+# Install essential dependencies that ComfyUI needs
+RUN pip install --no-cache-dir \
+    numpy>=1.24.0 \
+    pillow>=10.0.0 \
+    scipy>=1.11.0
+
 # Install xformers for memory efficiency
 RUN pip install --no-cache-dir xformers==0.0.24 --index-url https://download.pytorch.org/whl/cu121
 

@@ -63,12 +63,19 @@ class ModelManager:
         url = model_config.get('url', '')
         name = model_config.get('name', '')
         filename = model_config.get('filename')
+        subfolder = model_config.get('subfolder', '')  # Support subfolder organization
 
         if not url:
             logger.error(f"No URL specified for model: {name}")
             return False
 
-        logger.info(f"Downloading model: {name}")
+        # Create subfolder if specified
+        if subfolder:
+            output_dir = output_dir / subfolder
+            output_dir.mkdir(parents=True, exist_ok=True)
+            logger.info(f"Downloading model: {name} to subfolder: {subfolder}")
+        else:
+            logger.info(f"Downloading model: {name}")
 
         # Determine download method based on URL format
         if url.startswith('civitai:'):

@@ -35,25 +35,30 @@ workflows:
   - flux-controlnet.json
   - flux-upscale.json
 
-# Models to download
+# Models to download (organized by subfolder)
 models:
   diffusion_models:
     - name: flux1-schnell
       url: https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/flux1-schnell.safetensors
       filename: flux1-schnell.safetensors
+      subfolder: flux
     - name: flux1-schnell-fp8
       url: https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-schnell-fp8-e4m3fn.safetensors
       filename: flux1-schnell-fp8.safetensors
+      subfolder: flux
     - name: flux1-dev
       url: https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/flux1-dev.safetensors
       filename: flux1-dev.safetensors
+      subfolder: flux
     - name: flux1-dev-fp8
       url: https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-dev-fp8.safetensors
       filename: flux1-dev-fp8.safetensors
+      subfolder: flux
   vae:
     - name: flux_vae
       url: https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/ae.safetensors
       filename: flux_vae.safetensors
+      subfolder: flux
   clip:
     - name: t5xxl_fp8
       url: https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn.safetensors
@@ -68,6 +73,7 @@ models:
     - name: flux_realism_lora
       url: https://huggingface.co/XLabs-AI/flux-RealismLora/resolve/main/lora.safetensors
       filename: flux_realism_lora.safetensors
+      subfolder: flux
   upscale_models:
     - name: RealESRGAN_x4plus
       url: https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth

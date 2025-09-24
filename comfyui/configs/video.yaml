@@ -47,21 +47,25 @@ workflows:
   - animate-motion-transfer.json
   - animate-character-consistency.json
 
-# Models to download
+# Models to download (organized by subfolder)
 models:
   checkpoints:
     - name: animatediff_v3_sd15
       url: https://huggingface.co/guoyww/animatediff/resolve/main/v3_sd15_mm.ckpt
       filename: animatediff_v3_sd15.ckpt
+      subfolder: sd15
     - name: realistic_vision_v5
       url: civitai:130072
       filename: realistic_vision_v5.safetensors
+      subfolder: sd15
     - name: animatediff_lightning_4step
       url: https://huggingface.co/ByteDance/AnimateDiff-Lightning/resolve/main/animatediff_lightning_4step_diffusers.safetensors
       filename: animatediff_lightning_4step.safetensors
+      subfolder: sd15
     - name: sd_turbo
       url: https://huggingface.co/stabilityai/sd-turbo/resolve/main/sd_turbo.safetensors
       filename: sd_turbo.safetensors
+      subfolder: sd15
   motion_models:
     - name: mm_sd_v15
       url: https://huggingface.co/guoyww/animatediff/resolve/main/mm_sd_v15.ckpt
@@ -85,32 +89,41 @@ models:
     - name: vae-ft-mse
       url: https://huggingface.co/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.safetensors
       filename: vae-ft-mse-840000-ema-pruned.safetensors
+      subfolder: sd15
     - name: sdxl_vae
       url: https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/resolve/main/sdxl_vae.safetensors
       filename: sdxl_vae.safetensors
+      subfolder: sdxl
   controlnet:
     - name: control_v11f1e_sd15_tile
       url: https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11f1e_sd15_tile.pth
       filename: control_v11f1e_sd15_tile.pth
+      subfolder: sd15
     - name: control_v11p_sd15_openpose
       url: https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11p_sd15_openpose.pth
       filename: control_v11p_sd15_openpose.pth
+      subfolder: sd15
     - name: control_v11f1p_sd15_depth
       url: https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11f1p_sd15_depth.pth
       filename: control_v11f1p_sd15_depth.pth
+      subfolder: sd15
   loras:
     - name: v2_lora_pan_left
       url: https://huggingface.co/guoyww/animatediff/resolve/main/v2_lora_PanLeft.ckpt
       filename: v2_lora_pan_left.ckpt
+      subfolder: sd15
     - name: v2_lora_pan_right
       url: https://huggingface.co/guoyww/animatediff/resolve/main/v2_lora_PanRight.ckpt
       filename: v2_lora_pan_right.ckpt
+      subfolder: sd15
     - name: v2_lora_zoom_in
       url: https://huggingface.co/guoyww/animatediff/resolve/main/v2_lora_ZoomIn.ckpt
       filename: v2_lora_zoom_in.ckpt
+      subfolder: sd15
     - name: v2_lora_zoom_out
       url: https://huggingface.co/guoyww/animatediff/resolve/main/v2_lora_ZoomOut.ckpt
       filename: v2_lora_zoom_out.ckpt
+      subfolder: sd15
 
 # Environment variables (override base)
 env_vars:

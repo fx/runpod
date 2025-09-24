@@ -55,6 +55,7 @@ install_python_packages() {
 
         # Install additional packages
         echo -e "${YELLOW}Installing additional packages...${NC}"
+        # Install additional packages that might not be in requirements.txt
         pip install --no-cache-dir \
             opencv-python-headless \
             imageio \
@@ -64,6 +65,7 @@ install_python_packages() {
             accelerate \
             Pillow \
             scipy
+
 
         touch /workspace/.comfyui_requirements_installed
         echo -e "${GREEN}Python dependencies installed successfully${NC}"
@@ -221,6 +223,13 @@ if [ ! -z "$RUNPOD_POD_ID" ]; then
 
         # Create model subdirectories for better organization
         mkdir -p /runpod/ComfyUI/models/{checkpoints,clip,clip_vision,controlnet,diffusers,embeddings,gligen,hypernetworks,loras,style_models,unet,upscale_models,vae,vae_approx}
+
+        # Create subdirectories for organized model storage by base model type
+        mkdir -p /runpod/ComfyUI/models/diffusion_models/{flux,sd3,pixart}
+        mkdir -p /runpod/ComfyUI/models/checkpoints/{sd15,sdxl,pony,anime}
+        mkdir -p /runpod/ComfyUI/models/loras/{flux,sd15,sdxl,pony}
+        mkdir -p /runpod/ComfyUI/models/controlnet/{sd15,sdxl,flux}
+        mkdir -p /runpod/ComfyUI/models/vae/{sd15,sdxl,flux}
 
         # Simply remove and symlink directories - no need to preserve state in ephemeral containers
         # Helper function to safely replace directory with symlink

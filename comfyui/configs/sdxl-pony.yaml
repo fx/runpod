@@ -22,35 +22,43 @@ workflows:
   - pony-txt2img.json
   - pony-highres.json
 
-# Models to download
+# Models to download (organized by subfolder)
 models:
   checkpoints:
     - name: sdxl_base_1.0
       url: https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
       filename: sd_xl_base_1.0.safetensors
+      subfolder: sdxl
     - name: sdxl_refiner_1.0
       url: https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0.safetensors
       filename: sd_xl_refiner_1.0.safetensors
+      subfolder: sdxl
     - name: ponyDiffusionV6XL
       url: civitai:290640
       filename: ponyDiffusionV6XL.safetensors
+      subfolder: pony
     - name: ponyRealism
       url: civitai:372465
       filename: ponyRealism.safetensors
+      subfolder: pony
     - name: juggernautXL
       url: civitai:133005
       filename: juggernautXL.safetensors
+      subfolder: sdxl
   vae:
     - name: sdxl_vae
       url: https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/resolve/main/sdxl_vae.safetensors
       filename: sdxl_vae.safetensors
+      subfolder: sdxl
   loras:
     - name: sdxl_offset_1.0
       url: https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_offset_example-lora_1.0.safetensors
       filename: sdxl_offset_1.0.safetensors
+      subfolder: sdxl
     - name: pony_quality_boost
       url: civitai:289123
       filename: pony_quality_boost.safetensors
+      subfolder: pony
   upscale_models:
     - name: RealESRGAN_x4plus
       url: https://huggingface.co/ai-forever/Real-ESRGAN/resolve/main/RealESRGAN_x4plus.pth

@@ -52,34 +52,32 @@ RUN git config --global url."https://github.com/".insteadOf git@github.com: && \
 RUN python3.11 -m venv $VENV_PATH
 ENV PATH="$VENV_PATH/bin:$PATH"
 
-# Install essential Python packages and numpy FIRST (before PyTorch)
-RUN pip install --upgrade --no-cache-dir pip setuptools wheel && \
-    pip install --no-cache-dir \
-    numpy>=1.25.0 \
-    pyyaml \
-    hiyapyco \
-    requests \
-    tqdm \
-    psutil \
-    "huggingface-hub[cli]"
+# Upgrade pip first
+RUN pip install --upgrade --no-cache-dir pip setuptools wheel
 
-# Install PyTorch with CUDA support (after numpy is installed)
+# Install PyTorch 2.6.0 with CUDA 12.4 (latest stable, RTX 5090 support)
 RUN pip install --no-cache-dir \
-    torch==2.2.0 \
-    torchvision==0.17.0 \
-    torchaudio==2.2.0 \
-    --index-url https://download.pytorch.org/whl/cu121
+    torch==2.6.0 \
+    torchvision==0.21.0 \
+    torchaudio==2.6.0 \
+    --index-url https://download.pytorch.org/whl/cu124
 
-# Install xformers for memory efficiency
-RUN pip install --no-cache-dir xformers==0.0.24 --index-url https://download.pytorch.org/whl/cu121
+# Install xformers for memory efficiency (latest for PyTorch 2.6.0)
+RUN pip install --no-cache-dir xformers --index-url https://download.pytorch.org/whl/cu124
 
 # Clone ComfyUI (shallow clone to save space)
 RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git $COMFYUI_PATH
 
-# Install ComfyUI's requirements (excluding torch/torchvision/torchaudio since we installed specific versions)
+# Install ComfyUI's requirements (just like ValyrianTech does)
 RUN cd $COMFYUI_PATH && \
-    grep -v "^torch\|^torchvision\|^torchaudio" requirements.txt | \
-    pip install --no-cache-dir -r /dev/stdin
+    pip install --no-cache-dir -r requirements.txt
+
+# Install additional tools we need for runtime
+RUN pip install --no-cache-dir \
+    pyyaml \
+    hiyapyco \
+    requests \
+    "huggingface-hub[cli]"
 
 # Install ComfyUI Manager (essential for UI)
 RUN cd $COMFYUI_PATH/custom_nodes && \

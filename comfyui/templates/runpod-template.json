@@ -18,7 +18,7 @@
     },
     {
       "key": "DOWNLOAD_MODELS",
-      "value": "false",
+      "value": "true",
       "description": "Download models on startup"
     },
     {
@@ -33,11 +33,11 @@
     },
     {
       "key": "HF_TOKEN",
-      "value": "",
-      "description": "HuggingFace token for gated models"
+      "value": "{{ RUNPOD_SECRET_HF_TOKEN }}",
+      "description": "HuggingFace token for gated models (uses RunPod secret HF_TOKEN)"
     }
   ],
   "dockerArgs": "",
-  "volumeMountPath": "/runpod-volume",
+  "volumeMountPath": "/runpod",
   "readme": "## ComfyUI on RunPod\n\nThis template provides ComfyUI with a flexible configuration system.\n\n### Available Variants\n- **base**: Minimal installation with SD 1.5\n- **flux**: FLUX models for high-quality generation\n- **sdxl-pony**: SDXL and Pony models\n- **video**: Video generation models\n\n### First Run\nOn first run, the container will:\n1. Install PyTorch and dependencies (~5 minutes)\n2. Download selected models if DOWNLOAD_MODELS=true\n3. Install custom nodes from configuration\n\n### Access\nComfyUI will be available at:\n- HTTP: `https://{pod-id}-8188.proxy.runpod.net`\n- Direct: Port 8188\n\n### GPU Memory Settings\n- 48GB+ (A6000, A100): Set COMFYUI_ARGS=--highvram\n- 24GB (RTX 4090, A5000): Leave empty (auto)\n- 8-16GB: Set COMFYUI_ARGS=--lowvram\n- <8GB: Set COMFYUI_ARGS=--cpu\n\n### Persistent Storage\nModels and outputs are stored in /runpod-volume and persist across restarts."
 }

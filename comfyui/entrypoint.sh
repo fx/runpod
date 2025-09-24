@@ -193,76 +193,74 @@ fi
 if [ ! -z "$RUNPOD_POD_ID" ]; then
     echo -e "${GREEN}Running on RunPod (Pod ID: $RUNPOD_POD_ID)${NC}"
 
+    # Check if HuggingFace token is available (set via RunPod template)
+    if [ ! -z "$HF_TOKEN" ]; then
+        echo -e "${GREEN}HuggingFace token configured${NC}"
+    fi
+
     # Set up RunPod-specific configurations
-    if [ ! -z "$RUNPOD_VOLUME_ID" ]; then
+    # Check if /runpod directory exists (network volume is mounted)
+    if [ -d "/runpod" ]; then
         echo -e "${GREEN}Using RunPod network volume${NC}"
+        echo -e "${YELLOW}Setting up persistent storage symlinks...${NC}"
 
-        # Create symlinks for persistent storage if using network volume
-        if [ -d "/runpod" ]; then
-            echo -e "${YELLOW}Setting up persistent storage symlinks...${NC}"
+        # Create organized cache structure on network volume
+        mkdir -p /runpod/cache/{pip,torch,huggingface,models}
+        mkdir -p /runpod/ComfyUI/{models,output,input,custom_nodes}
 
-            # Create organized cache structure on network volume
-            mkdir -p /runpod/cache/{pip,torch,huggingface,models}
-            mkdir -p /runpod/ComfyUI/{models,output,input,custom_nodes}
+        # Create model subdirectories for better organization
+        mkdir -p /runpod/ComfyUI/models/{checkpoints,clip,clip_vision,controlnet,diffusers,embeddings,gligen,hypernetworks,loras,style_models,unet,upscale_models,vae,vae_approx}
 
-            # Create model subdirectories for better organization
-            mkdir -p /runpod/ComfyUI/models/{checkpoints,clip,clip_vision,controlnet,diffusers,embeddings,gligen,hypernetworks,loras,style_models,unet,upscale_models,vae,vae_approx}
+        # Simply remove and symlink directories - no need to preserve state in ephemeral containers
+        # Helper function to safely replace directory with symlink
+        replace_with_symlink() {
+            local src=$1
+            local target=$2
+            local name=$3
 
-            # Simply remove and symlink directories - no need to preserve state in ephemeral containers
-            # Helper function to safely replace directory with symlink
-            replace_with_symlink() {
-                local src=$1
-                local target=$2
-                local name=$3
+            # If it's already a symlink pointing to the right place, skip
+            if [ -L "$src" ] && [ "$(readlink -f "$src")" = "$(readlink -f "$target")" ]; then
+                echo -e "${GREEN}$name already correctly symlinked${NC}"
+                return
+            fi
 
-                # If it's already a symlink pointing to the right place, skip
-                if [ -L "$src" ] && [ "$(readlink -f "$src")" = "$(readlink -f "$target")" ]; then
-                    echo -e "${GREEN}$name already correctly symlinked${NC}"
-                    return
-                fi
+            # We don't check for mount points anymore - we ALWAYS want symlinks when /runpod exists
 
-                # Check if it's a mount point (can't be removed)
-                if mountpoint -q "$src" 2>/dev/null; then
-                    echo -e "${YELLOW}$name is a mount point, skipping symlink${NC}"
-                    return
-                fi
+            # Remove existing directory/file/symlink
+            # We ALWAYS want to use network storage when available
+            if [ -e "$src" ] || [ -L "$src" ]; then
+                echo -e "${YELLOW}Removing existing $name to create symlink${NC}"
+                rm -rf "$src" 2>/dev/null || {
+                    echo -e "${RED}Failed to remove $src, trying with umount${NC}"
+                    umount "$src" 2>/dev/null || true
+                    rm -rf "$src" 2>/dev/null || true
+                }
+            fi
 
-                # Remove existing directory/file/symlink
-                # We ALWAYS want to use network storage when available
-                if [ -e "$src" ] || [ -L "$src" ]; then
-                    echo -e "${YELLOW}Removing existing $name to create symlink${NC}"
-                    rm -rf "$src" 2>/dev/null || {
-                        echo -e "${RED}Failed to remove $src, trying with umount${NC}"
-                        umount "$src" 2>/dev/null || true
-                        rm -rf "$src" 2>/dev/null || true
-                    }
-                fi
+            # Create the symlink
+            ln -sf "$target" "$src"
+            echo -e "${GREEN}Created symlink for $name${NC}"
+        }
 
-                # Create the symlink
-                ln -sf "$target" "$src"
-                echo -e "${GREEN}Created symlink for $name${NC}"
-            }
+        # Models directory
+        replace_with_symlink "/workspace/ComfyUI/models" "/runpod/ComfyUI/models" "models directory"
 
-            # Models directory
-            replace_with_symlink "/workspace/ComfyUI/models" "/runpod/ComfyUI/models" "models directory"
+        # Output directory
+        replace_with_symlink "/workspace/ComfyUI/output" "/runpod/ComfyUI/output" "output directory"
 
-            # Output directory
-            replace_with_symlink "/workspace/ComfyUI/output" "/runpod/ComfyUI/output" "output directory"
+        # Input directory
+        replace_with_symlink "/workspace/ComfyUI/input" "/runpod/ComfyUI/input" "input directory"
 
-            # Input directory
-            replace_with_symlink "/workspace/ComfyUI/input" "/runpod/ComfyUI/input" "input directory"
+        # Custom nodes directory
+        replace_with_symlink "/workspace/ComfyUI/custom_nodes" "/runpod/ComfyUI/custom_nodes" "custom_nodes directory"
 
-            # Custom nodes directory
-            replace_with_symlink "/workspace/ComfyUI/custom_nodes" "/runpod/ComfyUI/custom_nodes" "custom_nodes directory"
+        # Set cache environment variables for this session
+        export PIP_CACHE_DIR="/runpod/cache/pip"
+        export TORCH_HOME="/runpod/cache/torch"
+        export HF_HOME="/runpod/cache/huggingface"
+        export XDG_CACHE_HOME="/runpod/cache"
 
-            # Set cache environment variables for this session
-            export PIP_CACHE_DIR="/runpod/cache/pip"
-            export TORCH_HOME="/runpod/cache/torch"
-            export HF_HOME="/runpod/cache/huggingface"
-            export XDG_CACHE_HOME="/runpod/cache"
-
-            echo -e "${GREEN}Network volume setup complete with organized cache structure${NC}"
-        fi
+        echo -e "${GREEN}Network volume setup complete with organized cache structure${NC}"
     fi
 else
     echo -e "${YELLOW}Not running on RunPod - using local storage${NC}"

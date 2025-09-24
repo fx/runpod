@@ -114,8 +114,7 @@ RUN chmod +x /workspace/entrypoint.sh
 # Create marker file for first run
 RUN touch /workspace/.first_run
 
-# Set up volumes for persistent storage
-VOLUME ["/workspace/ComfyUI/models", "/workspace/ComfyUI/output", "/workspace/ComfyUI/input", "/workspace/storage", "/workspace/venv-cache"]
+# No VOLUME declarations - let entrypoint handle symlinks
 
 # Expose ComfyUI port
 EXPOSE 8188

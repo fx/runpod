@@ -1,7 +1,7 @@
 {
-  "name": "ComfyUI Flux Edition",
-  "imageName": "effekt/runpod-comfyui:flux",
-  "description": "ComfyUI pre-configured for flux models with optimized settings.",
+  "name": "ComfyUI Sdxl-pony Edition",
+  "imageName": "effekt/runpod-comfyui:sdxl-pony",
+  "description": "ComfyUI pre-configured for sdxl-pony models with optimized settings.",
   "volumeInGb": 50,
   "containerDiskInGb": 20,
   "minVcpuCount": 4,
@@ -13,13 +13,13 @@
   "env": [
     {
       "key": "CONFIG_NAME",
-      "value": "flux",
-      "description": "Pre-configured for flux models"
+      "value": "sdxl-pony",
+      "description": "Pre-configured for sdxl-pony models"
     },
     {
       "key": "DOWNLOAD_MODELS",
       "value": "true",
-      "description": "Downloads flux models on first run"
+      "description": "Downloads sdxl-pony models on first run"
     },
     {
       "key": "AUTO_UPDATE",
@@ -33,10 +33,10 @@
     },
     {
       "key": "HF_TOKEN",
-      "value": "",
-      "description": "Required for FLUX models - get from huggingface.co/settings/tokens"
+      "value": "{{ RUNPOD_SECRET_HF_TOKEN }}",
+      "description": "HuggingFace token for gated models - uses RunPod secret HF_TOKEN"
     }
   ],
   "dockerArgs": "",
-  "volumeMountPath": "/runpod-volume"
+  "volumeMountPath": "/runpod"
 }

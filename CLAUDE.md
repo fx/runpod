@@ -129,7 +129,14 @@ tar -xzf runpodctl_*_linux_amd64.tar.gz -C ~/.local/bin
 
 #### Managing Templates via API
 
-##### Create Template
+**⚠️ CRITICAL: Template Management Rules ⚠️**
+- **NEVER delete templates without explicit user permission**
+- Always use PATCH to update existing templates when possible
+- Only delete templates if explicitly instructed by the user
+- Before any deletion, always ask: "Are you sure you want to delete template X?"
+- Use the template management script in comfyui/templates/manage-templates.sh
+
+##### Create/Update/List Templates
 ```bash
 # API endpoint: https://rest.runpod.io/v1/templates (NOT api.runpod.io)
 # Get API key from: https://www.runpod.io/console/user/settings
